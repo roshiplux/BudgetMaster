@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetMaster - Personal Finance Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Primary palette - Purple harmony
+                        primary: '#A78BFA',
+                        secondary: '#34D399',
+                        accent: '#FBBF24',
+                        
+                        // Extended pastel palette using color theory
+                        // Analogous colors (purple family)
+                        pastelPurple: '#E1BEE7',
+                        pastelLavender: '#D8BFD8',
+                        pastelViolet: '#DDA0DD',
+                        pastelOrchid: '#E6E6FA',
+                        
+                        // Complementary colors (yellow-orange family)
+                        pastelYellow: '#FFF2CC',
+                        pastelPeach: '#FFCCCB',
+                        pastelOrange: '#FFD4B3',
+                        pastelCoral: '#FFB3BA',
+                        
+                        // Triadic colors (green family)
+                        pastelGreen: '#B8E6B8',
+                        pastelMint: '#AAFFC3',
+                        pastelSage: '#C3E9D0',
+                        pastelLime: '#E0FFE0',
+                        
+                        // Triadic colors (blue family)
+                        pastelBlue: '#A7C7E7',
+                        pastelSky: '#87CEEB',
+                        pastelAqua: '#B0E0E6',
+                        pastelTeal: '#AFEEEE',
+                        
+                        // Split-complementary (pink family)
+                        pastelPink: '#F8BBD9',
+                        pastelRose: '#FFB6C1',
+                        pastelMagenta: '#F0A0C9',
+                        pastelFuchsia: '#E6A8D2',
+                        
+                        // Neutral pastels for balance
+                        pastelCream: '#FFF8DC',
+                        pastelBeige: '#F5F5DC',
+                        pastelGray: '#E8E8E8',
+                        pastelSilver: '#F0F0F0'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded-lg flex items-center justify-center shadow-lg">
+                        <span class="text-white font-bold text-xl">💰</span>
+                    </div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-300 dark:via-pink-300 dark:to-blue-300">BudgetMaster</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="syncStatus" class="text-sm text-gray-600 hidden">
+                        <span id="syncStatusText">Not synced</span>
+                    </div>
+                    <button id="settingsBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2">
+                        <span>⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                </div>
+                
+                <!-- Hidden Profile Dropdown (moved to settings) -->
+                <div id="profileDropdown" class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50 hidden transition-colors duration-300">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-600">
+                        <div class="flex items-center space-x-3">
+                            <img id="userAvatar" src="" alt="Profile" class="w-10 h-10 rounded-full">
+                            <div>
+                                <p id="userName" class="font-medium text-gray-800 dark:text-white"></p>
+                                <p id="userEmail" class="text-sm text-gray-600 dark:text-gray-300"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-2">
+                        <button id="syncNowBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
+                            <span>☁️</span>
+                            <span>Sync Now</span>
+                        </button>
+                        <button id="loadFromDriveDropdownBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
+                            <span>📥</span>
+                            <span>Load from Drive</span>
+                        </button>
+                        <div class="border-t border-gray-100 dark:border-gray-600 my-2"></div>
+                        <button id="signOutBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded flex items-center space-x-2 transition-colors">
+                            <span>🚪</span>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Daily Summary -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                <span class="mr-2">📅</span> Today's Summary
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900 dark:to-cyan-900 rounded-lg p-4 border-2 border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <p class="text-sm font-medium text-blue-600 dark:text-blue-300">Today's Income</p>
+                    <p id="todayIncome" class="text-2xl font-bold text-blue-700 dark:text-blue-200">$0.00</p>
+                </div>
+                <div class="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900 dark:to-pink-900 rounded-lg p-4 border-2 border-red-200 dark:border-red-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <p class="text-sm font-medium text-red-600 dark:text-red-300">Today's Expenses</p>
+                    <p id="todayExpenses" class="text-2xl font-bold text-red-700 dark:text-red-200">$0.00</p>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900 dark:to-emerald-900 rounded-lg p-4 border-2 border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <p class="text-sm font-medium text-green-600 dark:text-green-300">This Week</p>
+                    <p id="weekExpenses" class="text-2xl font-bold text-green-700 dark:text-green-200">$0.00</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900 dark:to-violet-900 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <p class="text-sm font-medium text-purple-600 dark:text-purple-300">This Month</p>
+                    <p id="monthExpenses" class="text-2xl font-bold text-purple-700 dark:text-purple-200">$0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-900 rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Income</p>
+                        <p id="totalIncome" class="text-3xl font-bold text-green-600 dark:text-green-400">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-800 dark:to-emerald-800 rounded-full flex items-center justify-center shadow-md">
+                        <span class="text-2xl">💵</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-white to-red-50 dark:from-gray-800 dark:to-red-900 rounded-xl shadow-lg p-6 border-l-4 border-red-500 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Expenses</p>
+                        <p id="totalExpenses" class="text-3xl font-bold text-red-600 dark:text-red-400">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-800 dark:to-pink-800 rounded-full flex items-center justify-center shadow-md">
+                        <span class="text-2xl">💸</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900 rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Bank Balance</p>
+                        <p id="totalBankBalance" class="text-3xl font-bold text-blue-600 dark:text-blue-400">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-800 dark:to-cyan-800 rounded-full flex items-center justify-center shadow-md">
+                        <span class="text-2xl">🏦</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Accounts Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                <span class="mr-2">🏦</span> Bank Accounts
+            </h2>
+            
+            <form id="bankAccountForm" class="mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <input type="text" id="bankName" placeholder="Bank name (e.g., Chase Checking)" 
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                    <select id="accountPurpose" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                        <option value="">Select Purpose</option>
+                        <option value="Checking">💳 Checking Account</option>
+                        <option value="Savings">💰 Savings Account</option>
+                        <option value="Emergency">🚨 Emergency Fund</option>
+                        <option value="Monthly Expenses">📅 Monthly Expenses</option>
+                        <option value="Vacation">✈️ Vacation Fund</option>
+                        <option value="Investment">📈 Investment Account</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                    <input type="number" id="bankBalance" placeholder="Current balance" step="0.01"
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors">
+                    Add Bank Account
+                </button>
+            </form>
+            
+            <div id="bankAccountsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Bank accounts will be added here -->
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Income Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                    <span class="mr-2">📈</span> Income Sources
+                </h2>
+                
+                <form id="incomeForm" class="mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <input type="text" id="incomeSource" placeholder="Income source (e.g., Salary)" 
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                        <input type="number" id="incomeAmount" placeholder="Amount" step="0.01"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors">
+                        Add Income
+                    </button>
+                </form>
+                
+                <div id="incomeList" class="space-y-3 max-h-64 overflow-y-auto">
+                    <!-- Income items will be added here -->
+                </div>
+            </div>
+
+            <!-- Expenses Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                    <span class="mr-2">📉</span> Expenses
+                </h2>
+                
+                <form id="expenseForm" class="mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <select id="expenseCategory" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                            <option value="">Select Category</option>
+                            <option value="Housing">🏠 Housing</option>
+                            <option value="Food">🍔 Food</option>
+                            <option value="Transportation">🚗 Transportation</option>
+                            <option value="Healthcare">🏥 Healthcare</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Shopping">🛍️ Shopping</option>
+                            <option value="Utilities">⚡ Utilities</option>
+                            <option value="Other">📦 Other</option>
+                        </select>
+                        <input type="number" id="expenseAmount" placeholder="Amount" step="0.01"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                    </div>
+                    <input type="text" id="expenseDescription" placeholder="Description (optional)" 
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 mb-4">
+                    <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors">
+                        Add Expense
+                    </button>
+                </form>
+                
+                <div id="expenseList" class="space-y-3 max-h-64 overflow-y-auto">
+                    <!-- Expense items will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Charts Section -->
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Expense Pie Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                    <span class="mr-2">🥧</span> Expense Distribution
+                </h2>
+                <div class="flex justify-center mb-4">
+                    <canvas id="expenseChart" width="300" height="300"></canvas>
+                </div>
+                <div id="expenseChartLegend" class="grid grid-cols-2 gap-2 text-sm">
+                    <!-- Legend will be populated here -->
+                </div>
+            </div>
+
+            <!-- Income vs Expenses Bar Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                    <span class="mr-2">📊</span> Income vs Expenses
+                </h2>
+                <div class="flex justify-center mb-4">
+                    <canvas id="incomeExpenseChart" width="300" height="300"></canvas>
+                </div>
+                <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+                    Monthly comparison of income and expenses
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Categories Overview -->
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                <span class="mr-2">📋</span> Expense Categories Breakdown
+            </h2>
+            <div id="categoryBreakdown" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Category breakdown will be displayed here -->
+            </div>
+        </div>
+
+
+
+        <!-- Transaction History -->
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center mb-4 sm:mb-0">
+                    <span class="mr-2">📋</span> Recent Transactions
+                </h2>
+                <div class="flex space-x-2">
+                    <button id="loadFromDriveBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        📥 Load from Drive
+                    </button>
+                    <button id="clearAllBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Clear All Data
+                    </button>
+                </div>
+            </div>
+            <div id="transactionHistory" class="space-y-3 max-h-96 overflow-y-auto">
+                <!-- Transaction history will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Main Footer Content -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
+                <!-- Company Info -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-lg flex items-center justify-center shadow-lg">
+                            <span class="text-white font-bold text-lg">🌐</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                                PluxCore Technologies
+                            </h3>
+                            <p class="text-blue-200 text-xs font-medium">Innovating Your Digital Future</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 text-sm mb-3 leading-relaxed">
+                        Empowering businesses with cutting-edge digital solutions and innovative software.
+                    </p>
+                    <div class="flex items-center space-x-2 text-sm text-blue-200">
+                        <span>🌍</span>
+                        <span>Visit:</span>
+                        <a href="https://www.pluxcore.com" target="_blank" rel="noopener noreferrer" 
+                           class="text-blue-300 hover:text-blue-100 font-medium transition-colors duration-200">
+                            www.pluxcore.com
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Developer Info -->
+                <div>
+                    <h4 class="text-sm font-semibold mb-3 text-blue-200">Development</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-purple-300">👨‍💻</span>
+                            <span class="text-gray-300 text-sm">Developed by</span>
+                        </div>
+                        <p class="text-white font-semibold text-sm">Roshith Priyadarshana</p>
+                        <p class="text-xs text-gray-400">Full-Stack Developer</p>
+                    </div>
+                </div>
+
+                <!-- Quick Links & Social -->
+                <div>
+                    <h4 class="text-sm font-semibold mb-3 text-blue-200">Connect</h4>
+                    <div class="space-y-2 mb-4">
+                        <a href="#" onclick="budgetManager.openHelpModal(); return false;" class="block text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm">
+                            ❓ Help & Support
+                        </a>
+                        <a href="https://www.pluxcore.com" target="_blank" rel="noopener noreferrer" class="block text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm">
+                            🌐 PluxCore Website
+                        </a>
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="#" target="_blank" rel="noopener noreferrer" 
+                           class="w-8 h-8 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
+                            <span class="text-white font-bold text-sm">f</span>
+                        </a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" 
+                           class="w-8 h-8 bg-sky-500 hover:bg-sky-400 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
+                            <span class="text-white font-bold text-sm">𝕏</span>
+                        </a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" 
+                           class="w-8 h-8 bg-blue-700 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
+                            <span class="text-white font-bold text-sm">in</span>
+                        </a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" 
+                           class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
+                            <span class="text-white font-bold text-sm">📷</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="border-t border-gray-700 pt-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center text-sm">
+                    <div class="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 mb-2 sm:mb-0">
+                        <div class="text-gray-400">
+                            © 2025 PluxCore Technologies. All rights reserved.
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-5 h-5 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">💰</span>
+                            </span>
+                            <span class="text-blue-200 font-semibold text-sm">BudgetMaster v1.0</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 text-gray-400 text-xs">
+                        <span class="flex items-center space-x-1">
+                            <span>🔒</span>
+                            <span>Privacy First</span>
+                        </span>
+                        <span class="flex items-center space-x-1">
+                            <span>☁️</span>
+                            <span>Cloud Sync</span>
+                        </span>
+                        <span class="flex items-center space-x-1">
+                            <span>📱</span>
+                            <span>Responsive</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decorative Elements -->
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        </div>
+    </footer>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <span class="mr-2">⚙️</span> Settings
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <div class="relative">
+                        <button id="googleDriveBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1">
+                            <img id="profilePicture" src="" alt="" class="w-4 h-4 rounded-full hidden">
+                            <span id="driveButtonText">🔗 Connect</span>
+                        </button>
+                        
+                        <!-- Account Menu Dropdown -->
+                        <div id="accountMenu" class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50 hidden">
+                            <div id="userProfile" class="p-4 border-b border-gray-100 dark:border-gray-600 hidden">
+                                <div class="flex items-center space-x-3">
+                                    <img id="userAvatarLarge" src="" alt="Profile" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p id="userNameDisplay" class="font-medium text-gray-800 dark:text-white text-sm"></p>
+                                        <p id="userEmailDisplay" class="text-xs text-gray-600 dark:text-gray-300"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <button id="switchAccountBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
+                                    <span>🔄</span>
+                                    <span>Switch Account</span>
+                                </button>
+                                <button id="signOutMenuBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded flex items-center space-x-2 transition-colors">
+                                    <span>🚪</span>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl">
+                        ✕
+                    </button>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Google Drive Actions (shown when connected) -->
+                <div id="driveActions" class="hidden bg-blue-50 dark:bg-blue-900 rounded-lg p-3">
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="syncNowBtnSettings" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                            <span>☁️</span>
+                            <span>Sync</span>
+                        </button>
+                        <button id="loadFromDriveBtnSettings" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                            <span>📥</span>
+                            <span>Load</span>
+                        </button>
+                        <button id="signOutBtnSettings" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                            <span>🚪</span>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theme Setting -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">🌙</span> Theme
+                    </h3>
+                    <div class="flex space-x-2">
+                        <button id="lightModeBtn" class="flex-1 py-1.5 px-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center space-x-1 text-sm">
+                            <span>☀️</span>
+                            <span>Light</span>
+                        </button>
+                        <button id="darkModeBtn" class="flex-1 py-1.5 px-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center space-x-1 text-sm">
+                            <span>🌙</span>
+                            <span>Dark</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Currency Setting -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">💱</span> Currency
+                    </h3>
+                    <select id="currencySelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm">
+                        <!-- Major World Currencies -->
+                        <optgroup label="🌍 Major World Currencies">
+                            <option value="USD">🇺🇸 US Dollar ($)</option>
+                            <option value="EUR">🇪🇺 Euro (€)</option>
+                            <option value="GBP">🇬🇧 British Pound (£)</option>
+                            <option value="JPY">🇯🇵 Japanese Yen (¥)</option>
+                            <option value="CNY">🇨🇳 Chinese Yuan (¥)</option>
+                            <option value="INR">🇮🇳 Indian Rupee (₹)</option>
+                            <option value="CAD">🇨🇦 Canadian Dollar (C$)</option>
+                            <option value="AUD">🇦🇺 Australian Dollar (A$)</option>
+                            <option value="CHF">🇨🇭 Swiss Franc (CHF)</option>
+                            <option value="KRW">🇰🇷 South Korean Won (₩)</option>
+                            <option value="BRL">🇧🇷 Brazilian Real (R$)</option>
+                            <option value="RUB">🇷🇺 Russian Ruble (₽)</option>
+                        </optgroup>
+                        
+                        <!-- South Asian Currencies -->
+                        <optgroup label="🏔️ South Asian Currencies">
+                            <option value="LKR">🇱🇰 Sri Lankan Rupee (Rs)</option>
+                            <option value="PKR">🇵🇰 Pakistani Rupee (Rs)</option>
+                            <option value="BDT">🇧🇩 Bangladeshi Taka (৳)</option>
+                            <option value="NPR">🇳🇵 Nepalese Rupee (Rs)</option>
+                            <option value="BTN">🇧🇹 Bhutanese Ngultrum (Nu)</option>
+                            <option value="MVR">🇲🇻 Maldivian Rufiyaa (Rf)</option>
+                            <option value="AFN">🇦🇫 Afghan Afghani (؋)</option>
+                        </optgroup>
+                        
+                        <!-- Southeast Asian Currencies -->
+                        <optgroup label="🌴 Southeast Asian Currencies">
+                            <option value="SGD">🇸🇬 Singapore Dollar (S$)</option>
+                            <option value="THB">🇹🇭 Thai Baht (฿)</option>
+                            <option value="MYR">🇲🇾 Malaysian Ringgit (RM)</option>
+                            <option value="IDR">🇮🇩 Indonesian Rupiah (Rp)</option>
+                            <option value="PHP">🇵🇭 Philippine Peso (₱)</option>
+                            <option value="VND">🇻🇳 Vietnamese Dong (₫)</option>
+                            <option value="KHR">🇰🇭 Cambodian Riel (៛)</option>
+                            <option value="LAK">🇱🇦 Lao Kip (₭)</option>
+                            <option value="MMK">🇲🇲 Myanmar Kyat (Ks)</option>
+                            <option value="BND">🇧🇳 Brunei Dollar ($)</option>
+                        </optgroup>
+                        
+                        <!-- East Asian Currencies -->
+                        <optgroup label="🏮 East Asian Currencies">
+                            <option value="HKD">🇭🇰 Hong Kong Dollar (HK$)</option>
+                            <option value="MOP">🇲🇴 Macanese Pataca (P)</option>
+                        </optgroup>
+                        
+                        <!-- Middle Eastern Currencies -->
+                        <optgroup label="🕌 Middle Eastern Currencies">
+                            <option value="AED">🇦🇪 UAE Dirham (د.إ)</option>
+                            <option value="SAR">🇸🇦 Saudi Riyal (ر.س)</option>
+                            <option value="QAR">🇶🇦 Qatari Riyal (ر.ق)</option>
+                            <option value="KWD">🇰🇼 Kuwaiti Dinar (د.ك)</option>
+                            <option value="BHD">🇧🇭 Bahraini Dinar (د.ب)</option>
+                            <option value="OMR">🇴🇲 Omani Rial (ر.ع)</option>
+                            <option value="JOD">🇯🇴 Jordanian Dinar (د.ا)</option>
+                            <option value="LBP">🇱🇧 Lebanese Pound (ل.ل)</option>
+                            <option value="ILS">🇮🇱 Israeli Shekel (₪)</option>
+                            <option value="IRR">🇮🇷 Iranian Rial (﷼)</option>
+                            <option value="IQD">🇮🇶 Iraqi Dinar (ع.د)</option>
+                        </optgroup>
+                        
+                        <!-- European Currencies -->
+                        <optgroup label="🏰 European Currencies">
+                            <option value="SEK">🇸🇪 Swedish Krona (kr)</option>
+                            <option value="NOK">🇳🇴 Norwegian Krone (kr)</option>
+                            <option value="DKK">🇩🇰 Danish Krone (kr)</option>
+                            <option value="PLN">🇵🇱 Polish Zloty (zł)</option>
+                            <option value="CZK">🇨🇿 Czech Koruna (Kč)</option>
+                            <option value="HUF">🇭🇺 Hungarian Forint (Ft)</option>
+                            <option value="TRY">🇹🇷 Turkish Lira (₺)</option>
+                            <option value="BGN">🇧🇬 Bulgarian Lev (лв)</option>
+                            <option value="RON">🇷🇴 Romanian Leu (lei)</option>
+                            <option value="HRK">🇭🇷 Croatian Kuna (kn)</option>
+                            <option value="RSD">🇷🇸 Serbian Dinar (дин)</option>
+                            <option value="BAM">🇧🇦 Bosnia-Herzegovina Mark (KM)</option>
+                            <option value="MKD">🇲🇰 Macedonian Denar (ден)</option>
+                            <option value="ALL">🇦🇱 Albanian Lek (L)</option>
+                            <option value="MDL">🇲🇩 Moldovan Leu (L)</option>
+                            <option value="UAH">🇺🇦 Ukrainian Hryvnia (₴)</option>
+                            <option value="BYN">🇧🇾 Belarusian Ruble (Br)</option>
+                            <option value="ISK">🇮🇸 Icelandic Krona (kr)</option>
+                        </optgroup>
+                        
+                        <!-- Central Asian Currencies -->
+                        <optgroup label="🏔️ Central Asian Currencies">
+                            <option value="KZT">🇰🇿 Kazakhstani Tenge (₸)</option>
+                            <option value="UZS">🇺🇿 Uzbekistani Som (soʻm)</option>
+                            <option value="KGS">🇰🇬 Kyrgyzstani Som (с)</option>
+                            <option value="TJS">🇹🇯 Tajikistani Somoni (SM)</option>
+                            <option value="TMT">🇹🇲 Turkmenistani Manat (T)</option>
+                            <option value="AZN">🇦🇿 Azerbaijani Manat (₼)</option>
+                            <option value="GEL">🇬🇪 Georgian Lari (₾)</option>
+                            <option value="AMD">🇦🇲 Armenian Dram (֏)</option>
+                        </optgroup>
+                        
+                        <!-- North American Currencies -->
+                        <optgroup label="🍁 North American Currencies">
+                            <option value="MXN">🇲🇽 Mexican Peso ($)</option>
+                            <option value="GTQ">🇬🇹 Guatemalan Quetzal (Q)</option>
+                            <option value="HNL">🇭🇳 Honduran Lempira (L)</option>
+                            <option value="NIO">🇳🇮 Nicaraguan Córdoba (C$)</option>
+                            <option value="CRC">🇨🇷 Costa Rican Colón (₡)</option>
+                            <option value="PAB">🇵🇦 Panamanian Balboa (B/.)</option>
+                            <option value="BZD">🇧🇿 Belize Dollar ($)</option>
+                        </optgroup>
+                        
+                        <!-- South American Currencies -->
+                        <optgroup label="🌎 South American Currencies">
+                            <option value="ARS">🇦🇷 Argentine Peso ($)</option>
+                            <option value="CLP">🇨🇱 Chilean Peso ($)</option>
+                            <option value="COP">🇨🇴 Colombian Peso ($)</option>
+                            <option value="PEN">🇵🇪 Peruvian Sol (S/)</option>
+                            <option value="BOB">🇧🇴 Bolivian Boliviano (Bs)</option>
+                            <option value="UYU">🇺🇾 Uruguayan Peso ($)</option>
+                            <option value="PYG">🇵🇾 Paraguayan Guaraní (₲)</option>
+                            <option value="VES">🇻🇪 Venezuelan Bolívar (Bs)</option>
+                            <option value="GYD">🇬🇾 Guyanese Dollar ($)</option>
+                            <option value="SRD">🇸🇷 Surinamese Dollar ($)</option>
+                        </optgroup>
+                        
+                        <!-- Caribbean Currencies -->
+                        <optgroup label="🏝️ Caribbean Currencies">
+                            <option value="JMD">🇯🇲 Jamaican Dollar ($)</option>
+                            <option value="BBD">🇧🇧 Barbadian Dollar ($)</option>
+                            <option value="TTD">🇹🇹 Trinidad & Tobago Dollar ($)</option>
+                            <option value="BSD">🇧🇸 Bahamian Dollar ($)</option>
+                            <option value="KYD">🇰🇾 Cayman Islands Dollar ($)</option>
+                            <option value="DOP">🇩🇴 Dominican Peso ($)</option>
+                            <option value="HTG">🇭🇹 Haitian Gourde (G)</option>
+                            <option value="CUP">🇨🇺 Cuban Peso ($)</option>
+                            <option value="XCD">🇦🇬 East Caribbean Dollar ($)</option>
+                            <option value="AWG">🇦🇼 Aruban Florin (ƒ)</option>
+                            <option value="ANG">🇨🇼 Netherlands Antillean Guilder (ƒ)</option>
+                        </optgroup>
+                        
+                        <!-- African Currencies -->
+                        <optgroup label="🌍 African Currencies">
+                            <option value="ZAR">🇿🇦 South African Rand (R)</option>
+                            <option value="NGN">🇳🇬 Nigerian Naira (₦)</option>
+                            <option value="EGP">🇪🇬 Egyptian Pound (ج.م)</option>
+                            <option value="GHS">🇬🇭 Ghanaian Cedi (₵)</option>
+                            <option value="KES">🇰🇪 Kenyan Shilling (Sh)</option>
+                            <option value="UGX">🇺🇬 Ugandan Shilling (Sh)</option>
+                            <option value="TZS">🇹🇿 Tanzanian Shilling (Sh)</option>
+                            <option value="RWF">🇷🇼 Rwandan Franc (Fr)</option>
+                            <option value="ETB">🇪🇹 Ethiopian Birr (Br)</option>
+                            <option value="MAD">🇲🇦 Moroccan Dirham (د.م)</option>
+                            <option value="TND">🇹🇳 Tunisian Dinar (د.ت)</option>
+                            <option value="DZD">🇩🇿 Algerian Dinar (د.ج)</option>
+                            <option value="LYD">🇱🇾 Libyan Dinar (ل.د)</option>
+                            <option value="SDG">🇸🇩 Sudanese Pound (ج.س)</option>
+                            <option value="SOS">🇸🇴 Somali Shilling (Sh)</option>
+                            <option value="DJF">🇩🇯 Djiboutian Franc (Fr)</option>
+                            <option value="ERN">🇪🇷 Eritrean Nakfa (Nfk)</option>
+                            <option value="MUR">🇲🇺 Mauritian Rupee (Rs)</option>
+                            <option value="SCR">🇸🇨 Seychellois Rupee (Rs)</option>
+                            <option value="MWK">🇲🇼 Malawian Kwacha (MK)</option>
+                            <option value="ZMW">🇿🇲 Zambian Kwacha (ZK)</option>
+                            <option value="BWP">🇧🇼 Botswanan Pula (P)</option>
+                            <option value="NAD">🇳🇦 Namibian Dollar ($)</option>
+                            <option value="SZL">🇸🇿 Swazi Lilangeni (L)</option>
+                            <option value="LSL">🇱🇸 Lesotho Loti (L)</option>
+                            <option value="AOA">🇦🇴 Angolan Kwanza (Kz)</option>
+                            <option value="MZN">🇲🇿 Mozambican Metical (MT)</option>
+                            <option value="MGA">🇲🇬 Malagasy Ariary (Ar)</option>
+                            <option value="KMF">🇰🇲 Comorian Franc (Fr)</option>
+                        </optgroup>
+                        
+                        <!-- Oceania Currencies -->
+                        <optgroup label="🏄 Oceania Currencies">
+                            <option value="NZD">🇳🇿 New Zealand Dollar (NZ$)</option>
+                            <option value="FJD">🇫🇯 Fijian Dollar ($)</option>
+                            <option value="SBD">🇸🇧 Solomon Islands Dollar ($)</option>
+                            <option value="VUV">🇻🇺 Vanuatu Vatu (Vt)</option>
+                            <option value="PGK">🇵🇬 Papua New Guinea Kina (K)</option>
+                            <option value="WST">🇼🇸 Samoan Tala (T)</option>
+                            <option value="TOP">🇹🇴 Tongan Paʻanga (T$)</option>
+                            <option value="XPF">🇵🇫 CFP Franc (Fr)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Data Management Section -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">💾</span> Data Management
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                            <span>📊</span>
+                            <span>Export</span>
+                        </button>
+                        <button id="importBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                            <span>📁</span>
+                            <span>Import</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">❓</span> Help & Support
+                    </h3>
+                    <button id="helpBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
+                        <span>❓</span>
+                        <span>Help & Setup Guide</span>
+                    </button>
+                </div>
+
+                <!-- App Info -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">ℹ️</span> About
+                    </h3>
+                    <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                        <p><strong>BudgetMaster</strong> v1.0 - Personal Finance Manager</p>
+                        <p>Data stored locally • Google Drive sync available</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end">
+                <button id="saveSettingsBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <span class="mr-2">❓</span> Help & Setup Guide
+                </h2>
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">
+                    ✕
+                </button>
+            </div>
+            
+            <div class="space-y-8">
+                <!-- Quick Start Guide -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                        <span class="mr-2">🚀</span> Quick Start Guide
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+                            <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">1. Add Bank Accounts</h4>
+                            <p class="text-sm text-blue-700 dark:text-blue-300">Start by adding your bank accounts to track your total balance across all accounts.</p>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900 rounded-lg p-4">
+                            <h4 class="font-semibold text-green-800 dark:text-green-200 mb-2">2. Record Income</h4>
+                            <p class="text-sm text-green-700 dark:text-green-300">Add your income sources like salary, freelance work, or investments.</p>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900 rounded-lg p-4">
+                            <h4 class="font-semibold text-red-800 dark:text-red-200 mb-2">3. Track Expenses</h4>
+                            <p class="text-sm text-red-700 dark:text-red-300">Log your expenses by category to see where your money is going.</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-4">
+                            <h4 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">4. Analyze & Export</h4>
+                            <p class="text-sm text-purple-700 dark:text-purple-300">View charts and export your data for further analysis.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Drive Setup -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                        <span class="mr-2">☁️</span> Google Drive Setup Instructions
+                    </h3>
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
+                        <div class="mb-4">
+                            <div class="flex items-center mb-3">
+                                <span class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">⚠️</span>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                    This is a demo version. To enable Google Drive sync, you need to set up your own Google Cloud project.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">1</span>
+                                    Create Google Cloud Project
+                                </h4>
+                                <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
+                                    <li>Go to <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Google Cloud Console</a></li>
+                                    <li>Click "New Project" and give it a name (e.g., "BudgetMaster")</li>
+                                    <li>Select your new project from the dropdown</li>
+                                </ol>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                                    <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">2</span>
+                                    Enable Google Drive API
+                                </h4>
+                                <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
+                                    <li>In the Cloud Console, go to "APIs & Services" → "Library"</li>
+                                    <li>Search for "Google Drive API"</li>
+                                    <li>Click on it and press "Enable"</li>
+                                </ol>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                                    <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">3</span>
+                                    Create Credentials
+                                </h4>
+                                <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
+                                    <li>Go to "APIs & Services" → "Credentials"</li>
+                                    <li>Click "Create Credentials" → "OAuth 2.0 Client ID"</li>
+                                    <li>Choose "Web application" as the application type</li>
+                                    <li>Add your domain to "Authorized JavaScript origins"</li>
+                                    <li>Copy the Client ID that's generated</li>
+                                </ol>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                                    <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">4</span>
+                                    Create API Key
+                                </h4>
+                                <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
+                                    <li>In "Credentials", click "Create Credentials" → "API Key"</li>
+                                    <li>Copy the API Key that's generated</li>
+                                    <li>Optionally, restrict the key to Google Drive API only</li>
+                                </ol>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                                    <span class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">5</span>
+                                    Update the Code
+                                </h4>
+                                <div class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                                    <p>Replace these lines in the JavaScript code:</p>
+                                    <div class="bg-gray-100 dark:bg-gray-900 rounded p-3 font-mono text-xs overflow-x-auto">
+                                        <div class="text-red-600 dark:text-red-400">// Replace these with your actual credentials:</div>
+                                        <div>this.CLIENT_ID = '<span class="text-blue-600 dark:text-blue-400">YOUR_CLIENT_ID_HERE</span>';</div>
+                                        <div>this.API_KEY = '<span class="text-blue-600 dark:text-blue-400">YOUR_API_KEY_HERE</span>';</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
+                            <div class="flex items-start">
+                                <span class="text-green-600 dark:text-green-400 mr-2">✅</span>
+                                <div>
+                                    <p class="text-sm font-semibold text-green-800 dark:text-green-200 mb-1">Once Setup is Complete:</p>
+                                    <ul class="text-sm text-green-700 dark:text-green-300 space-y-1">
+                                        <li>• Your data will automatically sync to Google Drive</li>
+                                        <li>• You can access your budget from any device</li>
+                                        <li>• Data is stored securely in your personal Google Drive</li>
+                                        <li>• Automatic backups prevent data loss</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Overview -->
+                <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                        <span class="mr-2">✨</span> Features Overview
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">🏦</span> Bank Account Management
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Track multiple bank accounts with different purposes and update balances easily.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">📊</span> Visual Charts
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">View your spending patterns with interactive pie charts and bar graphs.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">💱</span> Multi-Currency Support
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Support for 100+ world currencies with proper formatting.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">🌙</span> Dark/Light Theme
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Switch between light and dark modes for comfortable viewing.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">📥</span> Import/Export
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Backup your data or import from other sources with JSON files.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
+                                <span class="mr-2">☁️</span> Cloud Sync
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Sync your data across devices with Google Drive integration.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Section -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                        <span class="mr-2">❓</span> Frequently Asked Questions
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Is my data secure?</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! Your data is stored locally in your browser and optionally synced to your personal Google Drive. We never have access to your financial information.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Can I use this offline?</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! The app works completely offline. Google Drive sync is optional and only used when you're online.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">What happens if I clear my browser data?</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">If you have Google Drive sync enabled, you can restore your data. Otherwise, make sure to export your data regularly as backup.</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Can I connect my bank account directly?</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">No, this is a manual tracking app for security reasons. You need to enter transactions manually, which gives you full control over your data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+                <button id="closeHelpBtn2" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BudgetManager {
+            constructor() {
+                this.data = this.loadData();
+                this.settings = this.loadSettings();
+                // Modern color palette - sophisticated and professional
+                this.pastelColors = [
+                    // Primary modern colors
+                    '#6366F1', // Indigo
+                    '#8B5CF6', // Violet  
+                    '#EC4899', // Pink
+                    '#EF4444', // Red
+                    '#F59E0B', // Amber
+                    '#10B981', // Emerald
+                    '#06B6D4', // Cyan
+                    '#3B82F6', // Blue
+                    
+                    // Secondary modern colors
+                    '#84CC16', // Lime
+                    '#F97316', // Orange
+                    '#14B8A6', // Teal
+                    '#8B5A2B', // Brown
+                    '#6B7280', // Gray
+                    '#7C3AED', // Purple
+                    '#DC2626', // Red-600
+                    '#059669', // Green-600
+                    
+                    // Tertiary modern colors
+                    '#4F46E5', // Indigo-600
+                    '#7C2D12', // Orange-900
+                    '#BE123C', // Rose-700
+                    '#166534', // Green-800
+                    '#1E40AF', // Blue-700
+                    '#7E22CE', // Purple-700
+                    '#B91C1C', // Red-700
+                    '#0F766E', // Teal-700
+                    
+                    // Additional sophisticated colors
+                    '#374151', // Gray-700
+                    '#1F2937', // Gray-800
+                    '#111827', // Gray-900
+                    '#0F172A', // Slate-900
+                    '#581C87', // Purple-900
+                    '#7F1D1D', // Red-900
+                    '#064E3B', // Emerald-900
+                    '#0C4A6E'  // Sky-900
+                ];
+                // Currency symbols mapping
+                this.currencySymbols = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'JPY': '¥',
+                    'CAD': 'C$',
+                    'AUD': 'A$',
+                    'CHF': 'CHF ',
+                    'CNY': '¥',
+                    'INR': '₹',
+                    'KRW': '₩',
+                    'BRL': 'R$',
+                    'MXN': '$',
+                    'LKR': 'Rs ',
+                    'RUB': '₽',
+                    'SGD': 'S$',
+                    'HKD': 'HK$',
+                    'NZD': 'NZ$',
+                    'SEK': 'kr',
+                    'NOK': 'kr',
+                    'DKK': 'kr',
+                    'PLN': 'zł',
+                    'CZK': 'Kč',
+                    'HUF': 'Ft',
+                    'TRY': '₺',
+                    'ZAR': 'R',
+                    'THB': '฿',
+                    'MYR': 'RM',
+                    'IDR': 'Rp',
+                    'PHP': '₱',
+                    'VND': '₫',
+                    'AED': 'د.إ',
+                    'SAR': 'ر.س',
+                    'QAR': 'ر.ق',
+                    'KWD': 'د.ك',
+                    'BHD': 'د.ب',
+                    'OMR': 'ر.ع',
+                    'JOD': 'د.ا',
+                    'LBP': 'ل.ل',
+                    'EGP': 'ج.م',
+                    'ILS': '₪',
+                    'PKR': 'Rs',
+                    'BDT': '৳',
+                    'NPR': 'Rs',
+                    'AFN': '؋',
+                    'IRR': '﷼',
+                    'IQD': 'ع.د',
+                    'KZT': '₸',
+                    'UZS': 'soʻm',
+                    'KGS': 'с',
+                    'TJS': 'SM',
+                    'TMT': 'T',
+                    'AZN': '₼',
+                    'GEL': '₾',
+                    'AMD': '֏',
+                    'BGN': 'лв',
+                    'RON': 'lei',
+                    'HRK': 'kn',
+                    'RSD': 'дин',
+                    'BAM': 'KM',
+                    'MKD': 'ден',
+                    'ALL': 'L',
+                    'MDL': 'L',
+                    'UAH': '₴',
+                    'BYN': 'Br',
+                    'LTL': 'Lt',
+                    'LVL': 'Ls',
+                    'EEK': 'kr',
+                    'ISK': 'kr',
+                    'CLP': '$',
+                    'ARS': '$',
+                    'UYU': '$',
+                    'PYG': '₲',
+                    'BOB': 'Bs',
+                    'PEN': 'S/',
+                    'COP': '$',
+                    'VES': 'Bs',
+                    'GYD': '$',
+                    'SRD': '$',
+                    'FKP': '£',
+                    'JMD': '$',
+                    'BBD': '$',
+                    'TTD': '$',
+                    'BSD': '$',
+                    'KYD': '$',
+                    'BZD': '$',
+                    'GTQ': 'Q',
+                    'HNL': 'L',
+                    'NIO': 'C$',
+                    'CRC': '₡',
+                    'PAB': 'B/.',
+                    'DOP': '$',
+                    'HTG': 'G',
+                    'CUP': '$',
+                    'XCD': '$',
+                    'AWG': 'ƒ',
+                    'ANG': 'ƒ',
+                    'SVC': '$',
+                    'NGN': '₦',
+                    'GHS': '₵',
+                    'KES': 'Sh',
+                    'UGX': 'Sh',
+                    'TZS': 'Sh',
+                    'RWF': 'Fr',
+                    'BIF': 'Fr',
+                    'DJF': 'Fr',
+                    'ETB': 'Br',
+                    'ERN': 'Nfk',
+                    'SOS': 'Sh',
+                    'SDG': 'ج.س',
+                    'SSD': '£',
+                    'LYD': 'ل.د',
+                    'TND': 'د.ت',
+                    'DZD': 'د.ج',
+                    'MAD': 'د.م',
+                    'MRU': 'UM',
+                    'SLE': 'Le',
+                    'LRD': '$',
+                    'GNF': 'Fr',
+                    'GMD': 'D',
+                    'SEN': 'Fr',
+                    'GWP': 'P',
+                    'CVE': '$',
+                    'XOF': 'Fr',
+                    'XAF': 'Fr',
+                    'KMF': 'Fr',
+                    'MGA': 'Ar',
+                    'MUR': 'Rs',
+                    'SCR': 'Rs',
+                    'MWK': 'MK',
+                    'ZMW': 'ZK',
+                    'ZWL': '$',
+                    'BWP': 'P',
+                    'NAD': '$',
+                    'SZL': 'L',
+                    'LSL': 'L',
+                    'AOA': 'Kz',
+                    'MZN': 'MT',
+                    'STN': 'Db',
+                    'CDF': 'Fr',
+                    'XPF': 'Fr',
+                    'FJD': '$',
+                    'SBD': '$',
+                    'VUV': 'Vt',
+                    'NCR': 'Fr',
+                    'PGK': 'K',
+                    'WST': 'T',
+                    'TOP': 'T$',
+                    'TVD': '$',
+                    'KID': '$',
+                    'NRU': '$',
+                    'MOP': 'P',
+                    'BND': '$',
+                    'KHR': '៛',
+                    'LAK': '₭',
+                    'MMK': 'Ks',
+                    'BTN': 'Nu',
+                    'MVR': 'Rf'
+                };
+                // Google Drive API configuration
+                this.CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your actual client ID
+                this.API_KEY = 'YOUR_API_KEY'; // Replace with your actual API key
+                this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+                this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
+                this.isGoogleDriveReady = false;
+                this.isSignedIn = false;
+                this.driveFileId = localStorage.getItem('budgetMasterDriveFileId');
+                
+                this.init();
+                this.addSampleDataIfEmpty();
+                this.initGoogleDrive();
+                this.applyTheme();
+            }
+
+            init() {
+                this.bindEvents();
+                this.updateDisplay();
+            }
+
+            async initGoogleDrive() {
+                try {
+                    await gapi.load('auth2', () => {
+                        gapi.auth2.init({
+                            client_id: this.CLIENT_ID
+                        });
+                    });
+
+                    await gapi.load('client', async () => {
+                        await gapi.client.init({
+                            apiKey: this.API_KEY,
+                            clientId: this.CLIENT_ID,
+                            discoveryDocs: [this.DISCOVERY_DOC],
+                            scope: this.SCOPES
+                        });
+
+                        this.isGoogleDriveReady = true;
+                        const authInstance = gapi.auth2.getAuthInstance();
+                        this.isSignedIn = authInstance.isSignedIn.get();
+                        this.updateGoogleDriveUI();
+
+                        // Listen for sign-in state changes
+                        authInstance.isSignedIn.listen((isSignedIn) => {
+                            this.isSignedIn = isSignedIn;
+                            this.updateGoogleDriveUI();
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error initializing Google Drive API:', error);
+                    this.showNotification('Google Drive sync unavailable', 'error');
+                }
+            }
+
+            updateGoogleDriveUI() {
+                const button = document.getElementById('googleDriveBtn');
+                const buttonText = document.getElementById('driveButtonText');
+                const profilePicture = document.getElementById('profilePicture');
+                const syncStatus = document.getElementById('syncStatus');
+                const syncStatusText = document.getElementById('syncStatusText');
+                const driveActions = document.getElementById('driveActions');
+                const userProfile = document.getElementById('userProfile');
+
+                if (!this.isGoogleDriveReady) {
+                    buttonText.textContent = '🔗 Drive Unavailable';
+                    profilePicture.classList.add('hidden');
+                    button.disabled = true;
+                    button.className = 'bg-gray-400 text-white px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed flex items-center space-x-1';
+                    driveActions.classList.add('hidden');
+                    syncStatus.classList.add('hidden');
+                    userProfile.classList.add('hidden');
+                    return;
+                }
+
+                if (this.isSignedIn) {
+                    this.updateUserProfile();
+                    buttonText.textContent = 'Connected';
+                    button.className = 'bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1';
+                    button.disabled = false;
+                    driveActions.classList.remove('hidden');
+                    syncStatus.classList.remove('hidden');
+                    userProfile.classList.remove('hidden');
+                    
+                    if (this.driveFileId) {
+                        syncStatusText.textContent = '✅ Synced';
+                        syncStatusText.className = 'text-green-600';
+                    } else {
+                        syncStatusText.textContent = '⚠️ Not synced';
+                        syncStatusText.className = 'text-yellow-600';
+                    }
+                } else {
+                    buttonText.textContent = '🔗 Connect';
+                    profilePicture.classList.add('hidden');
+                    button.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1';
+                    button.disabled = false;
+                    driveActions.classList.add('hidden');
+                    syncStatus.classList.add('hidden');
+                    userProfile.classList.add('hidden');
+                }
+            }
+
+            async updateUserProfile() {
+                try {
+                    const response = await gapi.client.request({
+                        path: 'https://www.googleapis.com/oauth2/v2/userinfo'
+                    });
+                    
+                    const userInfo = response.result;
+                    const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNFNUU3RUIiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI4IiB5PSI4Ij4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaIiBmaWxsPSIjNkI3MjgwIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5LjMzIDEzLjk5IDcuMDEgMTUuNzQgNiAxOC4yNFYyMEgxOFYxOC4yNEMxNi45OSAxNS43NCAxNC42NyAxMy45OSAxMiAxNFoiIGZpbGw9IiM2QjcyODAiLz4KPC9zdmc+Cjwvc3ZnPgo=';
+                    
+                    // Update all profile elements
+                    const profilePicture = document.getElementById('profilePicture');
+                    const userAvatarLarge = document.getElementById('userAvatarLarge');
+                    const userNameDisplay = document.getElementById('userNameDisplay');
+                    const userEmailDisplay = document.getElementById('userEmailDisplay');
+                    
+                    // Legacy elements (keep for compatibility)
+                    const userName = document.getElementById('userName');
+                    const userEmail = document.getElementById('userEmail');
+                    const userAvatar = document.getElementById('userAvatar');
+                    
+                    const name = userInfo.name || 'Google User';
+                    const email = userInfo.email || 'Connected';
+                    const picture = userInfo.picture || defaultAvatar;
+                    
+                    // Update new elements
+                    if (profilePicture) {
+                        profilePicture.src = picture;
+                        profilePicture.classList.remove('hidden');
+                    }
+                    if (userAvatarLarge) userAvatarLarge.src = picture;
+                    if (userNameDisplay) userNameDisplay.textContent = name;
+                    if (userEmailDisplay) userEmailDisplay.textContent = email;
+                    
+                    // Update legacy elements
+                    if (userName) userName.textContent = name;
+                    if (userEmail) userEmail.textContent = email;
+                    if (userAvatar) userAvatar.src = picture;
+                    
+                } catch (error) {
+                    console.error('Error fetching user profile:', error);
+                    // Fallback for error cases
+                    const profilePicture = document.getElementById('profilePicture');
+                    if (profilePicture) {
+                        profilePicture.classList.add('hidden');
+                    }
+                }
+            }
+
+            addSampleDataIfEmpty() {
+                // Add sample data only if no data exists
+                if (this.data.income.length === 0 && this.data.expenses.length === 0 && this.data.bankAccounts.length === 0) {
+                    // Sample bank accounts
+                    this.data.bankAccounts = [
+                        { id: 1001, name: "Chase Checking", purpose: "Checking", balance: 2500.00, createdDate: "12/1/2024" },
+                        { id: 1002, name: "Savings Account", purpose: "Savings", balance: 8500.00, createdDate: "12/1/2024" },
+                        { id: 1003, name: "Emergency Fund", purpose: "Emergency", balance: 5000.00, createdDate: "12/1/2024" }
+                    ];
+
+                    // Sample income
+                    this.data.income = [
+                        { id: 2001, source: "Salary", amount: 4500.00, date: "12/1/2024", type: "income" },
+                        { id: 2002, source: "Freelance Work", amount: 800.00, date: "12/5/2024", type: "income" },
+                        { id: 2003, source: "Investment Returns", amount: 150.00, date: "12/10/2024", type: "income" }
+                    ];
+
+                    // Sample expenses with variety
+                    this.data.expenses = [
+                        { id: 3001, category: "Housing", amount: 1200.00, description: "Monthly Rent", date: "12/1/2024", type: "expense" },
+                        { id: 3002, category: "Food", amount: 85.50, description: "Grocery Shopping", date: "12/2/2024", type: "expense" },
+                        { id: 3003, category: "Transportation", amount: 45.00, description: "Gas Station", date: "12/3/2024", type: "expense" },
+                        { id: 3004, category: "Utilities", amount: 120.00, description: "Electricity Bill", date: "12/4/2024", type: "expense" },
+                        { id: 3005, category: "Entertainment", amount: 25.00, description: "Movie Tickets", date: "12/5/2024", type: "expense" },
+                        { id: 3006, category: "Healthcare", amount: 75.00, description: "Doctor Visit", date: "12/6/2024", type: "expense" },
+                        { id: 3007, category: "Shopping", amount: 150.00, description: "Clothing", date: "12/7/2024", type: "expense" },
+                        { id: 3008, category: "Food", amount: 32.50, description: "Restaurant Dinner", date: "12/8/2024", type: "expense" },
+                        { id: 3009, category: "Transportation", amount: 15.00, description: "Bus Pass", date: "12/9/2024", type: "expense" },
+                        { id: 3010, category: "Other", amount: 40.00, description: "Gift for Friend", date: "12/10/2024", type: "expense" }
+                    ];
+
+                    this.saveData();
+                }
+            }
+
+            bindEvents() {
+                document.getElementById('bankAccountForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addBankAccount();
+                });
+
+                document.getElementById('incomeForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addIncome();
+                });
+
+                document.getElementById('expenseForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addExpense();
+                });
+
+                document.getElementById('clearAllBtn').addEventListener('click', () => {
+                    if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                        this.clearAllData();
+                    }
+                });
+
+                document.getElementById('loadFromDriveBtn').addEventListener('click', () => {
+                    this.loadFromGoogleDrive();
+                });
+
+                // Profile dropdown events (legacy - kept for compatibility)
+                document.getElementById('syncNowBtn').addEventListener('click', () => {
+                    this.syncToGoogleDrive();
+                    this.hideProfileDropdown();
+                });
+
+                document.getElementById('loadFromDriveDropdownBtn').addEventListener('click', () => {
+                    this.loadFromGoogleDrive();
+                    this.hideProfileDropdown();
+                });
+
+                document.getElementById('signOutBtn').addEventListener('click', () => {
+                    this.signOutFromGoogle();
+                    this.hideProfileDropdown();
+                });
+
+                // Settings modal events
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    this.openSettingsModal();
+                });
+
+                document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+                    this.closeSettingsModal();
+                });
+
+                document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                    this.saveSettings();
+                });
+
+                document.getElementById('lightModeBtn').addEventListener('click', () => {
+                    this.setTheme('light');
+                });
+
+                document.getElementById('darkModeBtn').addEventListener('click', () => {
+                    this.setTheme('dark');
+                });
+
+                // Settings-based button events
+                document.getElementById('googleDriveBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleGoogleDriveAction();
+                });
+
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportData();
+                });
+
+                document.getElementById('importBtn').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    this.importData(e.target.files[0]);
+                });
+
+                document.getElementById('helpBtn').addEventListener('click', () => {
+                    this.openHelpModal();
+                });
+
+                // Settings Google Drive actions
+                document.getElementById('syncNowBtnSettings').addEventListener('click', () => {
+                    this.syncToGoogleDrive();
+                });
+
+                document.getElementById('loadFromDriveBtnSettings').addEventListener('click', () => {
+                    this.loadFromGoogleDrive();
+                });
+
+                document.getElementById('signOutBtnSettings').addEventListener('click', () => {
+                    this.signOutFromGoogle();
+                });
+
+                // Account menu events
+                document.getElementById('switchAccountBtn').addEventListener('click', () => {
+                    this.switchGoogleAccount();
+                    this.hideAccountMenu();
+                });
+
+                document.getElementById('signOutMenuBtn').addEventListener('click', () => {
+                    this.signOutFromGoogle();
+                    this.hideAccountMenu();
+                });
+
+                // Help modal events
+                document.getElementById('closeHelpBtn').addEventListener('click', () => {
+                    this.closeHelpModal();
+                });
+
+                document.getElementById('closeHelpBtn2').addEventListener('click', () => {
+                    this.closeHelpModal();
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    const dropdown = document.getElementById('profileDropdown');
+                    const accountMenu = document.getElementById('accountMenu');
+                    const button = document.getElementById('googleDriveBtn');
+                    const settingsModal = document.getElementById('settingsModal');
+                    const helpModal = document.getElementById('helpModal');
+                    
+                    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                        this.hideProfileDropdown();
+                    }
+                    
+                    // Close account menu when clicking outside
+                    if (!accountMenu.contains(e.target) && !button.contains(e.target)) {
+                        this.hideAccountMenu();
+                    }
+                    
+                    // Close settings modal when clicking outside
+                    if (e.target === settingsModal) {
+                        this.closeSettingsModal();
+                    }
+                    
+                    // Close help modal when clicking outside
+                    if (e.target === helpModal) {
+                        this.closeHelpModal();
+                    }
+                });
+            }
+
+            addBankAccount() {
+                const name = document.getElementById('bankName').value.trim();
+                const purpose = document.getElementById('accountPurpose').value;
+                const balance = parseFloat(document.getElementById('bankBalance').value);
+
+                if (!name || !purpose || isNaN(balance)) {
+                    alert('Please fill in all bank account details.');
+                    return;
+                }
+
+                const account = {
+                    id: Date.now(),
+                    name,
+                    purpose,
+                    balance,
+                    createdDate: new Date().toLocaleDateString()
+                };
+
+                this.data.bankAccounts.push(account);
+                this.saveData();
+                this.updateDisplay();
+                document.getElementById('bankAccountForm').reset();
+            }
+
+            addIncome() {
+                const source = document.getElementById('incomeSource').value.trim();
+                const amount = parseFloat(document.getElementById('incomeAmount').value);
+
+                if (!source || !amount || amount <= 0) {
+                    alert('Please enter a valid income source and amount.');
+                    return;
+                }
+
+                const income = {
+                    id: Date.now(),
+                    source,
+                    amount,
+                    date: new Date().toLocaleDateString(),
+                    type: 'income'
+                };
+
+                this.data.income.push(income);
+                this.saveData();
+                this.updateDisplay();
+                document.getElementById('incomeForm').reset();
+            }
+
+            addExpense() {
+                const category = document.getElementById('expenseCategory').value;
+                const amount = parseFloat(document.getElementById('expenseAmount').value);
+                const description = document.getElementById('expenseDescription').value.trim();
+
+                if (!category || !amount || amount <= 0) {
+                    alert('Please select a category and enter a valid amount.');
+                    return;
+                }
+
+                const expense = {
+                    id: Date.now(),
+                    category,
+                    amount,
+                    description: description || category,
+                    date: new Date().toLocaleDateString(),
+                    type: 'expense'
+                };
+
+                this.data.expenses.push(expense);
+                this.saveData();
+                this.updateDisplay();
+                document.getElementById('expenseForm').reset();
+            }
+
+            updateDisplay() {
+                this.updateDailySummary();
+                this.updateSummary();
+                this.updateBankAccountsList();
+                this.updateIncomeList();
+                this.updateExpenseList();
+                this.updateCategoryBreakdown();
+                this.updateTransactionHistory();
+                this.drawCharts();
+            }
+
+            drawCharts() {
+                this.drawExpensePieChart();
+                this.drawIncomeExpenseBarChart();
+            }
+
+            drawExpensePieChart() {
+                const canvas = document.getElementById('expenseChart');
+                const ctx = canvas.getContext('2d');
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = 120;
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Calculate category totals
+                const categories = {};
+                this.data.expenses.forEach(expense => {
+                    categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
+                });
+
+                const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+                
+                if (total === 0) {
+                    ctx.fillStyle = '#E5E7EB';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#6B7280';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No expenses yet', centerX, centerY);
+                    return;
+                }
+
+                let currentAngle = -Math.PI / 2;
+                const legendContainer = document.getElementById('expenseChartLegend');
+                legendContainer.innerHTML = '';
+
+                Object.entries(categories).forEach(([category, amount], index) => {
+                    const sliceAngle = (amount / total) * 2 * Math.PI;
+                    const color = this.pastelColors[index % this.pastelColors.length];
+
+                    // Draw slice
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Draw border
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Add to legend
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'flex items-center space-x-2';
+                    legendItem.innerHTML = `
+                        <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
+                        <span class="text-gray-700 dark:text-gray-300">${category}: $${amount.toFixed(2)}</span>
+                    `;
+                    legendContainer.appendChild(legendItem);
+
+                    currentAngle += sliceAngle;
+                });
+            }
+
+            drawIncomeExpenseBarChart() {
+                const canvas = document.getElementById('incomeExpenseChart');
+                const ctx = canvas.getContext('2d');
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const totalIncome = this.data.income.reduce((sum, item) => sum + item.amount, 0);
+                const totalExpenses = this.data.expenses.reduce((sum, item) => sum + item.amount, 0);
+                const maxValue = Math.max(totalIncome, totalExpenses, 1000);
+
+                const barWidth = 80;
+                const barSpacing = 100;
+                const chartHeight = 200;
+                const chartBottom = 250;
+
+                // Draw income bar
+                const incomeHeight = (totalIncome / maxValue) * chartHeight;
+                ctx.fillStyle = '#10B981';
+                ctx.fillRect(50, chartBottom - incomeHeight, barWidth, incomeHeight);
+                ctx.strokeStyle = '#059669';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50, chartBottom - incomeHeight, barWidth, incomeHeight);
+
+                // Draw expense bar
+                const expenseHeight = (totalExpenses / maxValue) * chartHeight;
+                ctx.fillStyle = '#EF4444';
+                ctx.fillRect(50 + barWidth + barSpacing, chartBottom - expenseHeight, barWidth, expenseHeight);
+                ctx.strokeStyle = '#DC2626';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50 + barWidth + barSpacing, chartBottom - expenseHeight, barWidth, expenseHeight);
+
+                // Add labels
+                ctx.fillStyle = '#374151';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                
+                // Income label
+                ctx.fillText('Income', 50 + barWidth/2, chartBottom + 20);
+                ctx.fillText(`$${totalIncome.toFixed(2)}`, 50 + barWidth/2, chartBottom + 40);
+                
+                // Expense label
+                ctx.fillText('Expenses', 50 + barWidth + barSpacing + barWidth/2, chartBottom + 20);
+                ctx.fillText(`$${totalExpenses.toFixed(2)}`, 50 + barWidth + barSpacing + barWidth/2, chartBottom + 40);
+
+                // Draw grid lines
+                ctx.strokeStyle = '#E5E7EB';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 5; i++) {
+                    const y = chartBottom - (i * chartHeight / 5);
+                    ctx.beginPath();
+                    ctx.moveTo(30, y);
+                    ctx.lineTo(270, y);
+                    ctx.stroke();
+                    
+                    // Add value labels
+                    ctx.fillStyle = '#6B7280';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`$${((maxValue / 5) * i).toFixed(0)}`, 25, y + 4);
+                }
+            }
+
+            updateDailySummary() {
+                const today = new Date().toLocaleDateString();
+                const startOfWeek = new Date();
+                startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+                const startOfMonth = new Date();
+                startOfMonth.setDate(1);
+
+                // Today's transactions
+                const todayIncome = this.data.income
+                    .filter(item => item.date === today)
+                    .reduce((sum, item) => sum + item.amount, 0);
+                
+                const todayExpenses = this.data.expenses
+                    .filter(item => item.date === today)
+                    .reduce((sum, item) => sum + item.amount, 0);
+
+                // This week's expenses
+                const weekExpenses = this.data.expenses
+                    .filter(item => new Date(item.date) >= startOfWeek)
+                    .reduce((sum, item) => sum + item.amount, 0);
+
+                // This month's expenses
+                const monthExpenses = this.data.expenses
+                    .filter(item => new Date(item.date) >= startOfMonth)
+                    .reduce((sum, item) => sum + item.amount, 0);
+
+                document.getElementById('todayIncome').textContent = this.formatCurrency(todayIncome);
+                document.getElementById('todayExpenses').textContent = this.formatCurrency(todayExpenses);
+                document.getElementById('weekExpenses').textContent = this.formatCurrency(weekExpenses);
+                document.getElementById('monthExpenses').textContent = this.formatCurrency(monthExpenses);
+            }
+
+            updateSummary() {
+                const totalIncome = this.data.income.reduce((sum, item) => sum + item.amount, 0);
+                const totalExpenses = this.data.expenses.reduce((sum, item) => sum + item.amount, 0);
+                const totalBankBalance = this.data.bankAccounts.reduce((sum, account) => sum + account.balance, 0);
+
+                document.getElementById('totalIncome').textContent = this.formatCurrency(totalIncome);
+                document.getElementById('totalExpenses').textContent = this.formatCurrency(totalExpenses);
+                document.getElementById('totalBankBalance').textContent = this.formatCurrency(totalBankBalance);
+            }
+
+            updateBankAccountsList() {
+                const container = document.getElementById('bankAccountsList');
+                container.innerHTML = '';
+
+                this.data.bankAccounts.forEach(account => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 rounded-lg p-4 border border-blue-200 dark:border-blue-700 transition-colors duration-300';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-gray-800 dark:text-white">${account.name}</h3>
+                                <p class="text-sm text-blue-600 dark:text-blue-400">${account.purpose}</p>
+                            </div>
+                            <button onclick="budgetManager.removeItem('bankAccounts', ${account.id})" 
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-blue-700 dark:text-blue-300">$${account.balance.toFixed(2)}</span>
+                            <div class="flex space-x-2">
+                                <button onclick="budgetManager.updateBalance(${account.id}, 'add')" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">+</button>
+                                <button onclick="budgetManager.updateBalance(${account.id}, 'subtract')" 
+                                        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">-</button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Added: ${account.createdDate}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            updateIncomeList() {
+                const container = document.getElementById('incomeList');
+                container.innerHTML = '';
+
+                this.data.income.forEach(income => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-3 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700 transition-colors duration-300';
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white">${income.source}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${income.date}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-green-600 dark:text-green-400">+$${income.amount.toFixed(2)}</span>
+                            <button onclick="budgetManager.removeItem('income', ${income.id})" 
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            updateExpenseList() {
+                const container = document.getElementById('expenseList');
+                container.innerHTML = '';
+
+                this.data.expenses.forEach(expense => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-3 bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700 transition-colors duration-300';
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white">${expense.description}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${expense.category} • ${expense.date}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-red-600 dark:text-red-400">-$${expense.amount.toFixed(2)}</span>
+                            <button onclick="budgetManager.removeItem('expenses', ${expense.id})" 
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            updateCategoryBreakdown() {
+                const container = document.getElementById('categoryBreakdown');
+                container.innerHTML = '';
+
+                const categories = {};
+                this.data.expenses.forEach(expense => {
+                    categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
+                });
+
+                const totalExpenses = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+
+                Object.entries(categories).forEach(([category, amount], index) => {
+                    const percentage = totalExpenses > 0 ? (amount / totalExpenses * 100).toFixed(1) : 0;
+                    const color = this.pastelColors[index % this.pastelColors.length];
+                    const div = document.createElement('div');
+                    div.className = 'bg-white dark:bg-gray-700 rounded-lg p-4 border-2 shadow-sm transition-colors duration-300';
+                    div.style.borderColor = color;
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium text-gray-700 dark:text-gray-200">${category}</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">${percentage}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                            <div class="h-3 rounded-full transition-all duration-300" style="width: ${percentage}%; background-color: ${color}"></div>
+                        </div>
+                        <p class="text-lg font-bold text-gray-800 dark:text-gray-200 mt-2">$${amount.toFixed(2)}</p>
+                    `;
+                    container.appendChild(div);
+                });
+
+                // Add example categories if no expenses exist
+                if (Object.keys(categories).length === 0) {
+                    const exampleCategories = [
+                        { name: 'Housing', example: 'Rent, mortgage, utilities', color: '#6366F1' },
+                        { name: 'Food', example: 'Groceries, restaurants', color: '#EC4899' },
+                        { name: 'Transportation', example: 'Gas, public transit, car payments', color: '#10B981' },
+                        { name: 'Entertainment', example: 'Movies, games, subscriptions', color: '#F59E0B' }
+                    ];
+
+                    exampleCategories.forEach(cat => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-white dark:bg-gray-700 rounded-lg p-4 border-2 shadow-sm opacity-60 transition-colors duration-300';
+                        div.style.borderColor = cat.color;
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">${cat.name}</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Example</span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">${cat.example}</p>
+                            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                                <div class="h-3 rounded-full" style="width: 0%; background-color: ${cat.color}"></div>
+                            </div>
+                            <p class="text-lg font-bold text-gray-400 dark:text-gray-500 mt-2">$0.00</p>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            }
+
+            updateTransactionHistory() {
+                const container = document.getElementById('transactionHistory');
+                container.innerHTML = '';
+
+                const allTransactions = [
+                    ...this.data.income.map(item => ({...item, type: 'income'})),
+                    ...this.data.expenses.map(item => ({...item, type: 'expense'}))
+                ].sort((a, b) => b.id - a.id);
+
+                allTransactions.slice(0, 20).forEach(transaction => {
+                    const div = document.createElement('div');
+                    const isIncome = transaction.type === 'income';
+                    div.className = `flex justify-between items-center p-3 ${isIncome ? 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700'} rounded-lg border transition-colors duration-300`;
+                    
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white">${isIncome ? transaction.source : transaction.description}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${isIncome ? 'Income' : transaction.category} • ${transaction.date}</p>
+                        </div>
+                        <span class="font-bold ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            ${isIncome ? '+' : '-'}$${transaction.amount.toFixed(2)}
+                        </span>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            updateBalance(accountId, action) {
+                const amount = prompt(`Enter amount to ${action === 'add' ? 'add to' : 'subtract from'} account:`);
+                const numAmount = parseFloat(amount);
+                
+                if (!amount || isNaN(numAmount) || numAmount <= 0) {
+                    alert('Please enter a valid positive amount.');
+                    return;
+                }
+
+                const account = this.data.bankAccounts.find(acc => acc.id === accountId);
+                if (account) {
+                    if (action === 'add') {
+                        account.balance += numAmount;
+                    } else {
+                        account.balance -= numAmount;
+                    }
+                    this.saveData();
+                    this.updateDisplay();
+                }
+            }
+
+            removeItem(type, id) {
+                this.data[type] = this.data[type].filter(item => item.id !== id);
+                this.saveData();
+                this.updateDisplay();
+            }
+
+            exportData() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `budget-data-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+
+            importData(file) {
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (importedData.income && importedData.expenses) {
+                            this.data = importedData;
+                            this.saveData();
+                            this.updateDisplay();
+                            alert('Data imported successfully!');
+                        } else {
+                            alert('Invalid file format. Please select a valid budget data file.');
+                        }
+                    } catch (error) {
+                        alert('Error reading file. Please make sure it\'s a valid JSON file.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            clearAllData() {
+                this.data = { income: [], expenses: [], bankAccounts: [] };
+                this.saveData();
+                this.updateDisplay();
+            }
+
+            async handleGoogleDriveAction() {
+                if (!this.isGoogleDriveReady) {
+                    this.showNotification('Google Drive API not ready', 'error');
+                    return;
+                }
+
+                if (!this.isSignedIn) {
+                    try {
+                        await gapi.auth2.getAuthInstance().signIn();
+                        this.showNotification('Successfully connected to Google Drive!', 'success');
+                    } catch (error) {
+                        this.showNotification('Failed to sign in to Google Drive', 'error');
+                    }
+                } else {
+                    // If already signed in, show the account menu
+                    this.toggleAccountMenu();
+                }
+            }
+
+            toggleAccountMenu() {
+                const accountMenu = document.getElementById('accountMenu');
+                accountMenu.classList.toggle('hidden');
+            }
+
+            hideAccountMenu() {
+                const accountMenu = document.getElementById('accountMenu');
+                accountMenu.classList.add('hidden');
+            }
+
+            async switchGoogleAccount() {
+                try {
+                    // Sign out first, then sign in with account chooser
+                    await gapi.auth2.getAuthInstance().signOut();
+                    
+                    // Small delay to ensure sign out is complete
+                    setTimeout(async () => {
+                        try {
+                            // Sign in with prompt to select account
+                            await gapi.auth2.getAuthInstance().signIn({
+                                prompt: 'select_account'
+                            });
+                            this.showNotification('Successfully switched Google account!', 'success');
+                        } catch (error) {
+                            console.error('Account switch error:', error);
+                            this.showNotification('Failed to switch account', 'error');
+                        }
+                    }, 500);
+                } catch (error) {
+                    console.error('Account switch error:', error);
+                    this.showNotification('Failed to switch account', 'error');
+                }
+            }
+
+            toggleProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.toggle('hidden');
+            }
+
+            hideProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.add('hidden');
+            }
+
+            async signOutFromGoogle() {
+                try {
+                    await gapi.auth2.getAuthInstance().signOut();
+                    this.driveFileId = null;
+                    localStorage.removeItem('budgetMasterDriveFileId');
+                    this.showNotification('Successfully signed out from Google Drive', 'success');
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                    this.showNotification('Failed to sign out', 'error');
+                }
+            }
+
+            async syncToGoogleDrive() {
+                try {
+                    this.showNotification('Syncing to Google Drive...', 'info');
+                    
+                    const dataToSync = {
+                        ...this.data,
+                        lastSync: new Date().toISOString(),
+                        version: '1.0'
+                    };
+
+                    const fileContent = JSON.stringify(dataToSync, null, 2);
+                    const fileName = 'BudgetMaster_Data.json';
+
+                    if (this.driveFileId) {
+                        // Update existing file
+                        await this.updateGoogleDriveFile(this.driveFileId, fileContent);
+                    } else {
+                        // Create new file
+                        const fileId = await this.createGoogleDriveFile(fileName, fileContent);
+                        this.driveFileId = fileId;
+                        localStorage.setItem('budgetMasterDriveFileId', fileId);
+                    }
+
+                    this.showNotification('Successfully synced to Google Drive!', 'success');
+                    this.updateGoogleDriveUI();
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    this.showNotification('Failed to sync to Google Drive', 'error');
+                }
+            }
+
+            async createGoogleDriveFile(fileName, content) {
+                const boundary = '-------314159265358979323846';
+                const delimiter = "\r\n--" + boundary + "\r\n";
+                const close_delim = "\r\n--" + boundary + "--";
+
+                const metadata = {
+                    'name': fileName,
+                    'parents': ['appDataFolder']
+                };
+
+                const multipartRequestBody =
+                    delimiter +
+                    'Content-Type: application/json\r\n\r\n' +
+                    JSON.stringify(metadata) +
+                    delimiter +
+                    'Content-Type: application/json\r\n\r\n' +
+                    content +
+                    close_delim;
+
+                const request = gapi.client.request({
+                    'path': 'https://www.googleapis.com/upload/drive/v3/files',
+                    'method': 'POST',
+                    'params': {'uploadType': 'multipart'},
+                    'headers': {
+                        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                    },
+                    'body': multipartRequestBody
+                });
+
+                const response = await request;
+                return response.result.id;
+            }
+
+            async updateGoogleDriveFile(fileId, content) {
+                const request = gapi.client.request({
+                    'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+                    'method': 'PATCH',
+                    'params': {'uploadType': 'media'},
+                    'headers': {
+                        'Content-Type': 'application/json'
+                    },
+                    'body': content
+                });
+
+                await request;
+            }
+
+            async loadFromGoogleDrive() {
+                if (!this.driveFileId || !this.isSignedIn) {
+                    return false;
+                }
+
+                try {
+                    this.showNotification('Loading from Google Drive...', 'info');
+                    
+                    const response = await gapi.client.drive.files.get({
+                        fileId: this.driveFileId,
+                        alt: 'media'
+                    });
+
+                    const driveData = JSON.parse(response.body);
+                    
+                    // Validate the data structure
+                    if (driveData.income && driveData.expenses && driveData.bankAccounts) {
+                        this.data = {
+                            income: driveData.income || [],
+                            expenses: driveData.expenses || [],
+                            bankAccounts: driveData.bankAccounts || []
+                        };
+                        this.saveData();
+                        this.updateDisplay();
+                        this.showNotification('Successfully loaded from Google Drive!', 'success');
+                        return true;
+                    } else {
+                        throw new Error('Invalid data format');
+                    }
+                } catch (error) {
+                    console.error('Load from Drive error:', error);
+                    this.showNotification('Failed to load from Google Drive', 'error');
+                    return false;
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full`;
+                
+                // Set color based on type
+                switch (type) {
+                    case 'success':
+                        notification.className += ' bg-green-500';
+                        break;
+                    case 'error':
+                        notification.className += ' bg-red-500';
+                        break;
+                    case 'info':
+                    default:
+                        notification.className += ' bg-blue-500';
+                        break;
+                }
+                
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+                
+                // Animate out and remove
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+
+            saveData() {
+                localStorage.setItem('budgetMasterData', JSON.stringify(this.data));
+                
+                // Auto-sync to Google Drive if connected
+                if (this.isSignedIn && this.driveFileId) {
+                    this.syncToGoogleDrive().catch(error => {
+                        console.error('Auto-sync failed:', error);
+                    });
+                }
+            }
+
+            loadData() {
+                const saved = localStorage.getItem('budgetMasterData');
+                return saved ? JSON.parse(saved) : { income: [], expenses: [], bankAccounts: [] };
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('budgetMasterSettings');
+                return saved ? JSON.parse(saved) : { theme: 'light', currency: 'USD' };
+            }
+
+            saveSettings() {
+                const currency = document.getElementById('currencySelect').value;
+                this.settings.currency = currency;
+                localStorage.setItem('budgetMasterSettings', JSON.stringify(this.settings));
+                this.updateDisplay();
+                this.closeSettingsModal();
+                this.showNotification('Settings saved successfully!', 'success');
+            }
+
+            openSettingsModal() {
+                document.getElementById('settingsModal').classList.remove('hidden');
+                document.getElementById('currencySelect').value = this.settings.currency;
+                this.updateThemeButtons();
+            }
+
+            closeSettingsModal() {
+                document.getElementById('settingsModal').classList.add('hidden');
+            }
+
+            openHelpModal() {
+                document.getElementById('helpModal').classList.remove('hidden');
+            }
+
+            closeHelpModal() {
+                document.getElementById('helpModal').classList.add('hidden');
+            }
+
+            setTheme(theme) {
+                this.settings.theme = theme;
+                localStorage.setItem('budgetMasterSettings', JSON.stringify(this.settings));
+                this.applyTheme();
+                this.updateThemeButtons();
+                // Force a complete re-render of all elements
+                setTimeout(() => {
+                    this.updateDisplay();
+                    this.drawCharts();
+                }, 100);
+                this.showNotification(`Switched to ${theme} mode`, 'success');
+            }
+
+            applyTheme() {
+                const html = document.documentElement;
+                const body = document.body;
+                
+                if (this.settings.theme === 'dark') {
+                    html.classList.add('dark');
+                    body.classList.add('dark');
+                    // Force repaint
+                    body.style.display = 'none';
+                    body.offsetHeight; // Trigger reflow
+                    body.style.display = '';
+                } else {
+                    html.classList.remove('dark');
+                    body.classList.remove('dark');
+                    // Force repaint
+                    body.style.display = 'none';
+                    body.offsetHeight; // Trigger reflow
+                    body.style.display = '';
+                }
+            }
+
+            updateThemeButtons() {
+                const lightBtn = document.getElementById('lightModeBtn');
+                const darkBtn = document.getElementById('darkModeBtn');
+                
+                // Reset both buttons first
+                lightBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
+                darkBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
+                
+                // Apply active state
+                if (this.settings.theme === 'light') {
+                    lightBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 transition-all duration-200 flex items-center justify-center space-x-2';
+                } else {
+                    darkBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-blue-500 bg-blue-900 text-blue-300 transition-all duration-200 flex items-center justify-center space-x-2';
+                }
+            }
+
+            formatCurrency(amount) {
+                const symbol = this.currencySymbols[this.settings.currency] || '$';
+                
+                // Currencies that don't use decimal places
+                const noDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'KHR', 'LAK', 'MMK', 'UZS', 'KZT', 'AMD', 'CLP', 'PYG', 'UGX', 'RWF', 'BIF', 'DJF', 'KMF', 'MGA', 'XOF', 'XAF', 'XPF', 'VUV', 'PGK'];
+                
+                if (noDecimalCurrencies.includes(this.settings.currency)) {
+                    return `${symbol}${Math.round(amount).toLocaleString()}`;
+                }
+                
+                // Special formatting for certain currencies
+                if (this.settings.currency === 'INR' || this.settings.currency === 'PKR' || this.settings.currency === 'LKR' || this.settings.currency === 'NPR' || this.settings.currency === 'BTN') {
+                    // Indian numbering system (lakhs, crores)
+                    return `${symbol}${amount.toFixed(2)}`;
+                }
+                
+                return `${symbol}${amount.toFixed(2)}`;
+            }
+        }
+
+        // Initialize the app
+        const budgetManager = new BudgetManager();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cdc3f945f892f9',t:'MTc1NDgxMDc5My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
