@@ -1,239 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BudgetMaster - Personal Finance Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Primary palette - Purple harmony
-                        primary: '#A78BFA',
-                        secondary: '#34D399',
-                        accent: '#FBBF24',
-                        
-                        // Extended pastel palette using color theory
-                        // Analogous colors (purple family)
-                        pastelPurple: '#E1BEE7',
-                        pastelLavender: '#D8BFD8',
-                        pastelViolet: '#DDA0DD',
-                        pastelOrchid: '#E6E6FA',
-                        
-                        // Complementary colors (yellow-orange family)
-                        pastelYellow: '#FFF2CC',
-                        pastelPeach: '#FFCCCB',
-                        pastelOrange: '#FFD4B3',
-                        pastelCoral: '#FFB3BA',
-                        
-                        // Triadic colors (green family)
-                        pastelGreen: '#B8E6B8',
-                        pastelMint: '#AAFFC3',
-                        pastelSage: '#C3E9D0',
-                        pastelLime: '#E0FFE0',
-                        
-                        // Triadic colors (blue family)
-                        pastelBlue: '#A7C7E7',
-                        pastelSky: '#87CEEB',
-                        pastelAqua: '#B0E0E6',
-                        pastelTeal: '#AFEEEE',
-                        
-                        // Split-complementary (pink family)
-                        pastelPink: '#F8BBD9',
-                        pastelRose: '#FFB6C1',
-                        pastelMagenta: '#F0A0C9',
-                        pastelFuchsia: '#E6A8D2',
-                        
-                        // Neutral pastels for balance
-                        pastelCream: '#FFF8DC',
-                        pastelBeige: '#F5F5DC',
-                        pastelGray: '#E8E8E8',
-                        pastelSilver: '#F0F0F0'
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50 transition-colors duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded-lg flex items-center justify-center shadow-lg">
-                        <span class="text-white font-bold text-xl">💰</span>
-                    </div>
-                    <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-300 dark:via-pink-300 dark:to-blue-300">BudgetMaster</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div id="syncStatus" class="text-sm text-gray-600 hidden">
-                        <span id="syncStatusText">Not synced</span>
-                    </div>
-                    <button id="settingsBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2">
-                        <span>⚙️</span>
-                        <span>Settings</span>
-                    </button>
-                </div>
-                
-                <!-- Hidden Profile Dropdown (moved to settings) -->
-                <div id="profileDropdown" class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50 hidden transition-colors duration-300">
-                    <div class="p-4 border-b border-gray-100 dark:border-gray-600">
-                        <div class="flex items-center space-x-3">
-                            <img id="userAvatar" src="" alt="Profile" class="w-10 h-10 rounded-full">
-                            <div>
-                                <p id="userName" class="font-medium text-gray-800 dark:text-white"></p>
-                                <p id="userEmail" class="text-sm text-gray-600 dark:text-gray-300"></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-2">
-                        <button id="syncNowBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
-                            <span>☁️</span>
-                            <span>Sync Now</span>
-                        </button>
-                        <button id="loadFromDriveDropdownBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
-                            <span>📥</span>
-                            <span>Load from Drive</span>
-                        </button>
-                        <div class="border-t border-gray-100 dark:border-gray-600 my-2"></div>
-                        <button id="signOutBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded flex items-center space-x-2 transition-colors">
-                            <span>🚪</span>
-                            <span>Sign Out</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Daily Summary -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                <span class="mr-2">📅</span> Today's Summary
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900 dark:to-cyan-900 rounded-lg p-4 border-2 border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <p class="text-sm font-medium text-blue-600 dark:text-blue-300">Today's Income</p>
-                    <p id="todayIncome" class="text-2xl font-bold text-blue-700 dark:text-blue-200">$0.00</p>
-                </div>
-                <div class="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900 dark:to-pink-900 rounded-lg p-4 border-2 border-red-200 dark:border-red-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <p class="text-sm font-medium text-red-600 dark:text-red-300">Today's Expenses</p>
-                    <p id="todayExpenses" class="text-2xl font-bold text-red-700 dark:text-red-200">$0.00</p>
-                </div>
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900 dark:to-emerald-900 rounded-lg p-4 border-2 border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <p class="text-sm font-medium text-green-600 dark:text-green-300">This Week</p>
-                    <p id="weekExpenses" class="text-2xl font-bold text-green-700 dark:text-green-200">$0.00</p>
-                </div>
-                <div class="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900 dark:to-violet-900 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <p class="text-sm font-medium text-purple-600 dark:text-purple-300">This Month</p>
-                    <p id="monthExpenses" class="text-2xl font-bold text-purple-700 dark:text-purple-200">$0.00</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-900 rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Income</p>
-                        <p id="totalIncome" class="text-3xl font-bold text-green-600 dark:text-green-400">$0.00</p>
-                    </div>
-                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-800 dark:to-emerald-800 rounded-full flex items-center justify-center shadow-md">
-                        <span class="text-2xl">💵</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-white to-red-50 dark:from-gray-800 dark:to-red-900 rounded-xl shadow-lg p-6 border-l-4 border-red-500 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Expenses</p>
-                        <p id="totalExpenses" class="text-3xl font-bold text-red-600 dark:text-red-400">$0.00</p>
-                    </div>
-                    <div class="w-12 h-12 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-800 dark:to-pink-800 rounded-full flex items-center justify-center shadow-md">
-                        <span class="text-2xl">💸</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900 rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Bank Balance</p>
-                        <p id="totalBankBalance" class="text-3xl font-bold text-blue-600 dark:text-blue-400">$0.00</p>
-                    </div>
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-800 dark:to-cyan-800 rounded-full flex items-center justify-center shadow-md">
-                        <span class="text-2xl">🏦</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bank Accounts Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                <span class="mr-2">🏦</span> Bank Accounts
-            </h2>
-            
-            <form id="bankAccountForm" class="mb-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <input type="text" id="bankName" placeholder="Bank name (e.g., Chase Checking)" 
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
-                    <select id="accountPurpose" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
-                        <option value="">Select Purpose</option>
-                        <option value="Checking">💳 Checking Account</option>
-                        <option value="Savings">💰 Savings Account</option>
-                        <option value="Emergency">🚨 Emergency Fund</option>
-                        <option value="Monthly Expenses">📅 Monthly Expenses</option>
-                        <option value="Vacation">✈️ Vacation Fund</option>
-                        <option value="Investment">📈 Investment Account</option>
-                        <option value="Other">📦 Other</option>
-                    </select>
-                    <input type="number" id="bankBalance" placeholder="Current balance" step="0.01"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
-                </div>
-                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors">
-                    Add Bank Account
-                </button>
-            </form>
-            
-            <div id="bankAccountsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Bank accounts will be added here -->
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Income Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                    <span class="mr-2">📈</span> Income Sources
-                </h2>
-                
-                <form id="incomeForm" class="mb-6">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <input type="text" id="incomeSource" placeholder="Income source (e.g., Salary)" 
-                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
-                        <input type="number" id="incomeAmount" placeholder="Amount" step="0.01"
-                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
-                    </div>
-                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors">
-                        Add Income
-                    </button>
-                </form>
-                
-                <div id="incomeList" class="space-y-3 max-h-64 overflow-y-auto">
-                    <!-- Income items will be added here -->
-                </div>
-            </div>
-
-            <!-- Expenses Section -->
+    <!-- App bootstrap -->
+    <script type="module" src="./src/js/app.js"></script>
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
                     <span class="mr-2">📉</span> Expenses
@@ -317,7 +86,7 @@
                 </h2>
                 <div class="flex space-x-2">
                     <button id="loadFromDriveBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        📥 Load from Drive
+                        📥 Load from Cloud
                     </button>
                     <button id="clearAllBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                         Clear All Data
@@ -489,7 +258,7 @@
             </div>
             
             <div class="space-y-4">
-                <!-- Google Drive Actions (shown when connected) -->
+                <!-- Cloud Actions (shown when connected) -->
                 <div id="driveActions" class="hidden bg-blue-50 dark:bg-blue-900 rounded-lg p-3">
                     <div class="grid grid-cols-3 gap-2">
                         <button id="syncNowBtnSettings" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
@@ -748,7 +517,7 @@
                     </h3>
                     <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         <p><strong>BudgetMaster</strong> v1.0 - Personal Finance Manager</p>
-                        <p>Data stored locally • Google Drive sync available</p>
+                        <p>Data stored locally • Cloud (Firebase) sync available</p>
                     </div>
                 </div>
             </div>
@@ -799,18 +568,16 @@
                     </div>
                 </div>
 
-                <!-- Google Drive Setup -->
+                <!-- Cloud Sync (Firebase) Setup -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <span class="mr-2">☁️</span> Google Drive Setup Instructions
+                        <span class="mr-2">☁️</span> Firebase Cloud Sync Setup
                     </h3>
                     <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
                         <div class="mb-4">
                             <div class="flex items-center mb-3">
                                 <span class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">⚠️</span>
-                                <p class="text-sm text-gray-700 dark:text-gray-300 font-semibold">
-                                    This is a demo version. To enable Google Drive sync, you need to set up your own Google Cloud project.
-                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 font-semibold">Set up Firebase to enable secure cloud sync across devices (optional).</p>
                             </div>
                         </div>
                         
@@ -818,50 +585,49 @@
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">1</span>
-                                    Create Google Cloud Project
+                                    Create Firebase Project
                                 </h4>
                                 <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
-                                    <li>Go to <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Google Cloud Console</a></li>
-                                    <li>Click "New Project" and give it a name (e.g., "BudgetMaster")</li>
-                                    <li>Select your new project from the dropdown</li>
+                                    <li>Go to <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Firebase Console</a></li>
+                                    <li>Click "Add project" and name it (e.g., BudgetMaster)</li>
+                                    <li>Disable Google Analytics (optional) and finish</li>
                                 </ol>
                             </div>
 
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">2</span>
-                                    Enable Google Drive API
+                                    Add a Web App
                                 </h4>
                                 <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
-                                    <li>In the Cloud Console, go to "APIs & Services" → "Library"</li>
-                                    <li>Search for "Google Drive API"</li>
-                                    <li>Click on it and press "Enable"</li>
+                                    <li>In Project Overview click "Add app" → select Web (</>)</li>
+                                    <li>Register app (no hosting needed yet)</li>
+                                    <li>Copy the Firebase config object</li>
                                 </ol>
                             </div>
 
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">3</span>
-                                    Create Credentials
+                                    Enable Firestore
                                 </h4>
                                 <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
-                                    <li>Go to "APIs & Services" → "Credentials"</li>
-                                    <li>Click "Create Credentials" → "OAuth 2.0 Client ID"</li>
-                                    <li>Choose "Web application" as the application type</li>
-                                    <li>Add your domain to "Authorized JavaScript origins"</li>
-                                    <li>Copy the Client ID that's generated</li>
+                                    <li>In the left menu select "Firestore Database"</li>
+                                    <li>Create database → Start in test mode (dev only)</li>
+                                    <li>Choose a region close to you</li>
+                                    <li>Enable Firestore</li>
                                 </ol>
                             </div>
 
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">4</span>
-                                    Create API Key
+                                    (Optional) Authentication Providers
                                 </h4>
                                 <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside ml-8">
-                                    <li>In "Credentials", click "Create Credentials" → "API Key"</li>
-                                    <li>Copy the API Key that's generated</li>
-                                    <li>Optionally, restrict the key to Google Drive API only</li>
+                                    <li>Go to Authentication → Get started</li>
+                                    <li>Enable Google (or Email/Password)</li>
+                                    <li>Save changes</li>
                                 </ol>
                             </div>
 
@@ -871,11 +637,10 @@
                                     Update the Code
                                 </h4>
                                 <div class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
-                                    <p>Replace these lines in the JavaScript code:</p>
+                                    <p>Replace firebaseConfig placeholders in the code with your project's values:</p>
                                     <div class="bg-gray-100 dark:bg-gray-900 rounded p-3 font-mono text-xs overflow-x-auto">
-                                        <div class="text-red-600 dark:text-red-400">// Replace these with your actual credentials:</div>
-                                        <div>this.CLIENT_ID = '<span class="text-blue-600 dark:text-blue-400">YOUR_CLIENT_ID_HERE</span>';</div>
-                                        <div>this.API_KEY = '<span class="text-blue-600 dark:text-blue-400">YOUR_API_KEY_HERE</span>';</div>
+                                        <div class="text-red-600 dark:text-red-400">// Inside constructor:</div>
+                                        <div>this.firebaseConfig = { apiKey: '<span class="text-blue-600 dark:text-blue-400">YOUR_API_KEY</span>', authDomain: '...firebaseapp.com', projectId: '...', storageBucket: '...', messagingSenderId: '...', appId: '...' };</div>
                                     </div>
                                 </div>
                             </div>
@@ -887,9 +652,9 @@
                                 <div>
                                     <p class="text-sm font-semibold text-green-800 dark:text-green-200 mb-1">Once Setup is Complete:</p>
                                     <ul class="text-sm text-green-700 dark:text-green-300 space-y-1">
-                                        <li>• Your data will automatically sync to Google Drive</li>
+                                        <li>• Your data will automatically sync to Firebase Cloud</li>
                                         <li>• You can access your budget from any device</li>
-                                        <li>• Data is stored securely in your personal Google Drive</li>
+                                        <li>• Data stored securely in your Firebase project</li>
                                         <li>• Automatic backups prevent data loss</li>
                                     </ul>
                                 </div>
@@ -938,7 +703,7 @@
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
                                 <span class="mr-2">☁️</span> Cloud Sync
                             </h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Sync your data across devices with Google Drive integration.</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Sync your data across devices with Firebase cloud integration.</p>
                         </div>
                     </div>
                 </div>
@@ -951,15 +716,15 @@
                     <div class="space-y-4">
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Is my data secure?</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! Your data is stored locally in your browser and optionally synced to your personal Google Drive. We never have access to your financial information.</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! Your data is stored locally in your browser and optionally synced (encrypted in transit) to your personal Firebase project. We never receive your financial information.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Can I use this offline?</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! The app works completely offline. Google Drive sync is optional and only used when you're online.</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Yes! The app works completely offline. Cloud sync is optional and only used when you're online.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">What happens if I clear my browser data?</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">If you have Google Drive sync enabled, you can restore your data. Otherwise, make sure to export your data regularly as backup.</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">If you enabled cloud sync you can restore your data after reinstalling. Otherwise export regularly as a backup.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Can I connect my bank account directly?</h4>
@@ -1184,18 +949,25 @@
                     'BTN': 'Nu',
                     'MVR': 'Rf'
                 };
-                // Google Drive API configuration
-                this.CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your actual client ID
-                this.API_KEY = 'YOUR_API_KEY'; // Replace with your actual API key
-                this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-                this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
-                this.isGoogleDriveReady = false;
+                // Firebase config placeholders (replace with your actual Firebase project config)
+                this.firebaseConfig = {
+                    apiKey: 'YOUR_FIREBASE_API_KEY',
+                    authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
+                    projectId: 'YOUR_FIREBASE_PROJECT_ID',
+                    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+                    messagingSenderId: 'YOUR_FIREBASE_SENDER_ID',
+                    appId: 'YOUR_FIREBASE_APP_ID'
+                };
+                this.firebaseApp = null;
+                this.firebaseAuth = null;
+                this.firebaseDb = null; // Firestore
+                this.firebaseUser = null;
                 this.isSignedIn = false;
-                this.driveFileId = localStorage.getItem('budgetMasterDriveFileId');
-                
+                this.lastRemoteVersion = null;
+
                 this.init();
                 this.addSampleDataIfEmpty();
-                this.initGoogleDrive();
+                this.initFirebase();
                 this.applyTheme();
             }
 
@@ -1204,40 +976,36 @@
                 this.updateDisplay();
             }
 
-            async initGoogleDrive() {
+            async initFirebase() {
                 try {
-                    await gapi.load('auth2', () => {
-                        gapi.auth2.init({
-                            client_id: this.CLIENT_ID
-                        });
+                    // Dynamically load Firebase scripts (to keep single-file approach)
+                    const loadScript = (src) => new Promise((resolve, reject) => { const s=document.createElement('script'); s.src=src; s.onload=resolve; s.onerror=reject; document.head.appendChild(s); });
+                    // Use version pinning for stability
+                    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+                    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+                    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+
+                    this.firebaseApp = firebase.initializeApp(this.firebaseConfig);
+                    this.firebaseAuth = firebase.auth();
+                    this.firebaseDb = firebase.firestore();
+
+                    this.firebaseAuth.onAuthStateChanged(user => {
+                        this.firebaseUser = user;
+                        this.isSignedIn = !!user;
+                        if (user) {
+                            this.loadFromFirebase();
+                        }
+                        this.updateCloudUI();
                     });
 
-                    await gapi.load('client', async () => {
-                        await gapi.client.init({
-                            apiKey: this.API_KEY,
-                            clientId: this.CLIENT_ID,
-                            discoveryDocs: [this.DISCOVERY_DOC],
-                            scope: this.SCOPES
-                        });
-
-                        this.isGoogleDriveReady = true;
-                        const authInstance = gapi.auth2.getAuthInstance();
-                        this.isSignedIn = authInstance.isSignedIn.get();
-                        this.updateGoogleDriveUI();
-
-                        // Listen for sign-in state changes
-                        authInstance.isSignedIn.listen((isSignedIn) => {
-                            this.isSignedIn = isSignedIn;
-                            this.updateGoogleDriveUI();
-                        });
-                    });
-                } catch (error) {
-                    console.error('Error initializing Google Drive API:', error);
-                    this.showNotification('Google Drive sync unavailable', 'error');
+                    this.updateCloudUI();
+                } catch (e) {
+                    console.error('Firebase init failed', e);
+                    this.showNotification('Firebase not configured', 'error');
                 }
             }
 
-            updateGoogleDriveUI() {
+            updateCloudUI() {
                 const button = document.getElementById('googleDriveBtn');
                 const buttonText = document.getElementById('driveButtonText');
                 const profilePicture = document.getElementById('profilePicture');
@@ -1245,18 +1013,7 @@
                 const syncStatusText = document.getElementById('syncStatusText');
                 const driveActions = document.getElementById('driveActions');
                 const userProfile = document.getElementById('userProfile');
-
-                if (!this.isGoogleDriveReady) {
-                    buttonText.textContent = '🔗 Drive Unavailable';
-                    profilePicture.classList.add('hidden');
-                    button.disabled = true;
-                    button.className = 'bg-gray-400 text-white px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed flex items-center space-x-1';
-                    driveActions.classList.add('hidden');
-                    syncStatus.classList.add('hidden');
-                    userProfile.classList.add('hidden');
-                    return;
-                }
-
+                // Repurpose existing UI for Firebase
                 if (this.isSignedIn) {
                     this.updateUserProfile();
                     buttonText.textContent = 'Connected';
@@ -1265,14 +1022,8 @@
                     driveActions.classList.remove('hidden');
                     syncStatus.classList.remove('hidden');
                     userProfile.classList.remove('hidden');
-                    
-                    if (this.driveFileId) {
-                        syncStatusText.textContent = '✅ Synced';
-                        syncStatusText.className = 'text-green-600';
-                    } else {
-                        syncStatusText.textContent = '⚠️ Not synced';
-                        syncStatusText.className = 'text-yellow-600';
-                    }
+                    syncStatusText.textContent = '✅ Ready';
+                    syncStatusText.className = 'text-green-600';
                 } else {
                     buttonText.textContent = '🔗 Connect';
                     profilePicture.classList.add('hidden');
@@ -1286,11 +1037,8 @@
 
             async updateUserProfile() {
                 try {
-                    const response = await gapi.client.request({
-                        path: 'https://www.googleapis.com/oauth2/v2/userinfo'
-                    });
-                    
-                    const userInfo = response.result;
+                    if (!this.firebaseUser) return;
+                    const userInfo = { name: this.firebaseUser.displayName || 'User', email: this.firebaseUser.email, picture: this.firebaseUser.photoURL };
                     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNFNUU3RUIiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI4IiB5PSI4Ij4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaIiBmaWxsPSIjNkI3MjgwIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5LjMzIDEzLjk5IDcuMDEgMTUuNzQgNiAxOC4yNFYyMEgxOFYxOC4yNEMxNi45OSAxNS43NCAxNC42NyAxMy45OSAxMiAxNFoiIGZpbGw9IiM2QjcyODAiLz4KPC9zdmc+Cjwvc3ZnPgo=';
                     
                     // Update all profile elements
@@ -1390,22 +1138,22 @@
                 });
 
                 document.getElementById('loadFromDriveBtn').addEventListener('click', () => {
-                    this.loadFromGoogleDrive();
+                    this.loadFromFirebase();
                 });
 
                 // Profile dropdown events (legacy - kept for compatibility)
                 document.getElementById('syncNowBtn').addEventListener('click', () => {
-                    this.syncToGoogleDrive();
+                    this.syncToFirebase();
                     this.hideProfileDropdown();
                 });
 
                 document.getElementById('loadFromDriveDropdownBtn').addEventListener('click', () => {
-                    this.loadFromGoogleDrive();
+                    this.loadFromFirebase();
                     this.hideProfileDropdown();
                 });
 
                 document.getElementById('signOutBtn').addEventListener('click', () => {
-                    this.signOutFromGoogle();
+                    this.signOutFromFirebase();
                     this.hideProfileDropdown();
                 });
 
@@ -1433,7 +1181,7 @@
                 // Settings-based button events
                 document.getElementById('googleDriveBtn').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.handleGoogleDriveAction();
+                    this.handleCloudAction();
                 });
 
                 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -1452,27 +1200,27 @@
                     this.openHelpModal();
                 });
 
-                // Settings Google Drive actions
+                // Settings Cloud actions
                 document.getElementById('syncNowBtnSettings').addEventListener('click', () => {
-                    this.syncToGoogleDrive();
+                    this.syncToFirebase();
                 });
 
                 document.getElementById('loadFromDriveBtnSettings').addEventListener('click', () => {
-                    this.loadFromGoogleDrive();
+                    this.loadFromFirebase();
                 });
 
                 document.getElementById('signOutBtnSettings').addEventListener('click', () => {
-                    this.signOutFromGoogle();
+                    this.signOutFromFirebase();
                 });
 
                 // Account menu events
                 document.getElementById('switchAccountBtn').addEventListener('click', () => {
-                    this.switchGoogleAccount();
+                    this.switchFirebaseAccount();
                     this.hideAccountMenu();
                 });
 
                 document.getElementById('signOutMenuBtn').addEventListener('click', () => {
-                    this.signOutFromGoogle();
+                    this.signOutFromFirebase();
                     this.hideAccountMenu();
                 });
 
@@ -1998,21 +1746,20 @@
                 this.updateDisplay();
             }
 
-            async handleGoogleDriveAction() {
-                if (!this.isGoogleDriveReady) {
-                    this.showNotification('Google Drive API not ready', 'error');
+            async handleCloudAction() {
+                if (!this.firebaseAuth) {
+                    this.showNotification('Firebase not ready', 'error');
                     return;
                 }
-
                 if (!this.isSignedIn) {
                     try {
-                        await gapi.auth2.getAuthInstance().signIn();
-                        this.showNotification('Successfully connected to Google Drive!', 'success');
-                    } catch (error) {
-                        this.showNotification('Failed to sign in to Google Drive', 'error');
+                        const provider = new firebase.auth.GoogleAuthProvider();
+                        await this.firebaseAuth.signInWithPopup(provider);
+                        this.showNotification('Signed in with Firebase', 'success');
+                    } catch (e) {
+                        this.showNotification('Sign-in failed', 'error');
                     }
                 } else {
-                    // If already signed in, show the account menu
                     this.toggleAccountMenu();
                 }
             }
@@ -2027,27 +1774,16 @@
                 accountMenu.classList.add('hidden');
             }
 
-            async switchGoogleAccount() {
+            async switchFirebaseAccount() {
                 try {
-                    // Sign out first, then sign in with account chooser
-                    await gapi.auth2.getAuthInstance().signOut();
-                    
-                    // Small delay to ensure sign out is complete
-                    setTimeout(async () => {
-                        try {
-                            // Sign in with prompt to select account
-                            await gapi.auth2.getAuthInstance().signIn({
-                                prompt: 'select_account'
-                            });
-                            this.showNotification('Successfully switched Google account!', 'success');
-                        } catch (error) {
-                            console.error('Account switch error:', error);
-                            this.showNotification('Failed to switch account', 'error');
-                        }
-                    }, 500);
-                } catch (error) {
-                    console.error('Account switch error:', error);
-                    this.showNotification('Failed to switch account', 'error');
+                    await this.firebaseAuth.signOut();
+                    await new Promise(r=>setTimeout(r,200));
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await this.firebaseAuth.signInWithPopup(provider);
+                    this.showNotification('Switched account', 'success');
+                } catch(e){
+                    console.error(e);
+                    this.showNotification('Switch failed', 'error');
                 }
             }
 
@@ -2061,46 +1797,26 @@
                 dropdown.classList.add('hidden');
             }
 
-            async signOutFromGoogle() {
+            async signOutFromFirebase() {
                 try {
-                    await gapi.auth2.getAuthInstance().signOut();
-                    this.driveFileId = null;
-                    localStorage.removeItem('budgetMasterDriveFileId');
-                    this.showNotification('Successfully signed out from Google Drive', 'success');
-                } catch (error) {
-                    console.error('Sign out error:', error);
-                    this.showNotification('Failed to sign out', 'error');
+                    await this.firebaseAuth.signOut();
+                    this.showNotification('Signed out', 'success');
+                } catch(e){
+                    this.showNotification('Sign out failed', 'error');
                 }
             }
 
-            async syncToGoogleDrive() {
+            async syncToFirebase() {
+                if (!this.isSignedIn || !this.firebaseDb) return;
                 try {
-                    this.showNotification('Syncing to Google Drive...', 'info');
-                    
-                    const dataToSync = {
-                        ...this.data,
-                        lastSync: new Date().toISOString(),
-                        version: '1.0'
-                    };
-
-                    const fileContent = JSON.stringify(dataToSync, null, 2);
-                    const fileName = 'BudgetMaster_Data.json';
-
-                    if (this.driveFileId) {
-                        // Update existing file
-                        await this.updateGoogleDriveFile(this.driveFileId, fileContent);
-                    } else {
-                        // Create new file
-                        const fileId = await this.createGoogleDriveFile(fileName, fileContent);
-                        this.driveFileId = fileId;
-                        localStorage.setItem('budgetMasterDriveFileId', fileId);
-                    }
-
-                    this.showNotification('Successfully synced to Google Drive!', 'success');
-                    this.updateGoogleDriveUI();
-                } catch (error) {
-                    console.error('Sync error:', error);
-                    this.showNotification('Failed to sync to Google Drive', 'error');
+                    this.showNotification('Syncing to cloud...', 'info');
+                    const docRef = this.firebaseDb.collection('budgetMaster').doc(this.firebaseUser.uid);
+                    const payload = { ...this.data, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), version: '1.0' };
+                    await docRef.set(payload, { merge: true });
+                    this.showNotification('Cloud sync complete', 'success');
+                } catch(e){
+                    console.error(e);
+                    this.showNotification('Cloud sync failed', 'error');
                 }
             }
 
@@ -2151,38 +1867,30 @@
                 await request;
             }
 
-            async loadFromGoogleDrive() {
-                if (!this.driveFileId || !this.isSignedIn) {
-                    return false;
-                }
-
+            async loadFromFirebase() {
+                if (!this.isSignedIn || !this.firebaseDb) return false;
                 try {
-                    this.showNotification('Loading from Google Drive...', 'info');
-                    
-                    const response = await gapi.client.drive.files.get({
-                        fileId: this.driveFileId,
-                        alt: 'media'
-                    });
-
-                    const driveData = JSON.parse(response.body);
-                    
-                    // Validate the data structure
-                    if (driveData.income && driveData.expenses && driveData.bankAccounts) {
-                        this.data = {
-                            income: driveData.income || [],
-                            expenses: driveData.expenses || [],
-                            bankAccounts: driveData.bankAccounts || []
-                        };
-                        this.saveData();
-                        this.updateDisplay();
-                        this.showNotification('Successfully loaded from Google Drive!', 'success');
-                        return true;
-                    } else {
-                        throw new Error('Invalid data format');
+                    this.showNotification('Loading cloud data...', 'info');
+                    const docRef = await this.firebaseDb.collection('budgetMaster').doc(this.firebaseUser.uid).get();
+                    if (docRef.exists) {
+                        const cloudData = docRef.data();
+                        if (cloudData.income && cloudData.expenses && cloudData.bankAccounts) {
+                            this.data = {
+                                income: cloudData.income || [],
+                                expenses: cloudData.expenses || [],
+                                bankAccounts: cloudData.bankAccounts || []
+                            };
+                            this.saveLocalOnly();
+                            this.updateDisplay();
+                            this.showNotification('Cloud data loaded', 'success');
+                            return true;
+                        }
                     }
-                } catch (error) {
-                    console.error('Load from Drive error:', error);
-                    this.showNotification('Failed to load from Google Drive', 'error');
+                    this.showNotification('No cloud data found', 'info');
+                    return false;
+                } catch(e){
+                    console.error(e);
+                    this.showNotification('Cloud load failed', 'error');
                     return false;
                 }
             }
@@ -2223,14 +1931,14 @@
                 }, 3000);
             }
 
-            saveData() {
+            saveLocalOnly() {
                 localStorage.setItem('budgetMasterData', JSON.stringify(this.data));
-                
-                // Auto-sync to Google Drive if connected
-                if (this.isSignedIn && this.driveFileId) {
-                    this.syncToGoogleDrive().catch(error => {
-                        console.error('Auto-sync failed:', error);
-                    });
+            }
+
+            saveData() {
+                this.saveLocalOnly();
+                if (this.isSignedIn) {
+                    this.syncToFirebase();
                 }
             }
 
@@ -2276,7 +1984,7 @@
                 localStorage.setItem('budgetMasterSettings', JSON.stringify(this.settings));
                 this.applyTheme();
                 this.updateThemeButtons();
-                // Force a complete re-render of all elements
+                // Force a complete re-render after theme is applied
                 setTimeout(() => {
                     this.updateDisplay();
                     this.drawCharts();
@@ -2286,22 +1994,11 @@
 
             applyTheme() {
                 const html = document.documentElement;
-                const body = document.body;
                 
                 if (this.settings.theme === 'dark') {
                     html.classList.add('dark');
-                    body.classList.add('dark');
-                    // Force repaint
-                    body.style.display = 'none';
-                    body.offsetHeight; // Trigger reflow
-                    body.style.display = '';
                 } else {
                     html.classList.remove('dark');
-                    body.classList.remove('dark');
-                    // Force repaint
-                    body.style.display = 'none';
-                    body.offsetHeight; // Trigger reflow
-                    body.style.display = '';
                 }
             }
 
