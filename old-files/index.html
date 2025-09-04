@@ -1,95 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- App bootstrap -->
-    <script type="module" src="./src/js/app.js"></script>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                    <span class="mr-2">📉</span> Expenses
-                </h2>
-                
-                <form id="expenseForm" class="mb-6">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <select id="expenseCategory" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
-                            <option value="">Select Category</option>
-                            <option value="Housing">🏠 Housing</option>
-                            <option value="Food">🍔 Food</option>
-                            <option value="Transportation">🚗 Transportation</option>
-                            <option value="Healthcare">🏥 Healthcare</option>
-                            <option value="Entertainment">🎬 Entertainment</option>
-                            <option value="Shopping">🛍️ Shopping</option>
-                            <option value="Utilities">⚡ Utilities</option>
-                            <option value="Other">📦 Other</option>
-                        </select>
-                        <input type="number" id="expenseAmount" placeholder="Amount" step="0.01"
-                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetMaster - Personal Finance Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom styles for charts and UI elements */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .dark {
+            color-scheme: dark;
+        }
+        
+        /* Mobile-specific responsive styles */
+        @media (max-width: 640px) {
+            .mobile-hidden {
+                display: none !important;
+            }
+            
+            .mobile-full {
+                width: 100% !important;
+            }
+            
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+            
+            .mobile-text-sm {
+                font-size: 0.875rem !important;
+            }
+            
+            .mobile-px-2 {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            
+            .mobile-py-1 {
+                padding-top: 0.25rem !important;
+                padding-bottom: 0.25rem !important;
+            }
+            
+            /* Make form inputs touch-friendly */
+            input, select, button {
+                min-height: 44px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            /* Better modal sizing on mobile */
+            .mobile-modal {
+                margin: 1rem !important;
+                max-height: 90vh !important;
+                width: calc(100% - 2rem) !important;
+                max-width: none !important;
+            }
+            
+            /* Responsive charts */
+            .mobile-chart {
+                height: 250px !important;
+            }
+            
+            /* Touch-friendly buttons */
+            .mobile-touch-button {
+                padding: 0.75rem !important;
+                font-size: 0.875rem !important;
+            }
+            
+            /* Responsive tables/lists */
+            .mobile-list-item {
+                padding: 0.75rem !important;
+                font-size: 0.875rem !important;
+            }
+            
+            /* Notification positioning */
+            .notification {
+                top: 1rem !important;
+                right: 1rem !important;
+                left: 1rem !important;
+                max-width: calc(100% - 2rem) !important;
+                transform: translateY(-100%) !important;
+            }
+            
+            .notification.show {
+                transform: translateY(0) !important;
+            }
+        }
+        
+        /* Tablet styles */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .tablet-grid-2 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .tablet-text-base {
+                font-size: 1rem !important;
+            }
+        }
+        
+        /* Improved touch targets */
+        @media (hover: none) and (pointer: coarse) {
+            button, .clickable {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+        
+        /* Responsive grid utilities */
+        .responsive-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1fr;
+        }
+        
+        @media (min-width: 640px) {
+            .responsive-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .responsive-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 1280px) {
+            .responsive-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-3 sm:py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-wallet text-white text-lg sm:text-xl"></i>
                     </div>
-                    <input type="text" id="expenseDescription" placeholder="Description (optional)" 
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 mb-4">
-                    <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors">
-                        Add Expense
-                    </button>
-                </form>
-                
-                <div id="expenseList" class="space-y-3 max-h-64 overflow-y-auto">
-                    <!-- Expense items will be added here -->
+                    <div>
+                        <h1 class="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">BudgetMaster</h1>
+                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mobile-hidden">Personal Finance Manager</p>
+                    </div>
                 </div>
+                <button id="settingsBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-2 sm:px-4 py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 transition-colors mobile-touch-button">
+                    <i class="fas fa-cog text-sm sm:text-base"></i>
+                    <span class="mobile-hidden text-sm sm:text-base">Settings</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <!-- Daily Summary -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Today's Income</p>
+                        <p id="todayIncome" class="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">$0.00</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                        <i class="fas fa-arrow-up text-green-600 dark:text-green-400 text-sm sm:text-base"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Today's Expenses</p>
+                        <p id="todayExpenses" class="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">$0.00</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                        <i class="fas fa-arrow-down text-red-600 dark:text-red-400 text-sm sm:text-base"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">This Week</p>
+                        <p id="weekExpenses" class="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">$0.00</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-week text-blue-600 dark:text-blue-400 text-sm sm:text-base"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">This Month</p>
+                        <p id="monthExpenses" class="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">$0.00</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-alt text-purple-600 dark:text-purple-400 text-sm sm:text-base"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-green-100 text-sm sm:text-base">Total Income</p>
+                        <p id="totalIncome" class="text-2xl sm:text-3xl font-bold mt-2">$0.00</p>
+                    </div>
+                    <i class="fas fa-money-bill-wave text-2xl sm:text-3xl text-green-200"></i>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-red-500 to-rose-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-red-100 text-sm sm:text-base">Total Expenses</p>
+                        <p id="totalExpenses" class="text-2xl sm:text-3xl font-bold mt-2">$0.00</p>
+                    </div>
+                    <i class="fas fa-receipt text-2xl sm:text-3xl text-red-200"></i>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg p-4 sm:p-6 text-white sm:col-span-2 lg:col-span-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-blue-100 text-sm sm:text-base">Bank Balance</p>
+                        <p id="totalBankBalance" class="text-2xl sm:text-3xl font-bold mt-2">$0.00</p>
+                    </div>
+                    <i class="fas fa-university text-2xl sm:text-3xl text-blue-200"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Accounts Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300 mb-6 sm:mb-8">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                <i class="fas fa-university mr-2 text-blue-500"></i> Bank Accounts
+            </h2>
+            
+            <form id="bankAccountForm" class="mb-4 sm:mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                    <input type="text" id="bankName" placeholder="Bank Name" 
+                           class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base">
+                    <select id="accountPurpose" class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm sm:text-base">
+                        <option value="">Select Purpose</option>
+                        <option value="Checking">Checking</option>
+                        <option value="Savings">Savings</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Investment">Investment</option>
+                        <option value="Business">Business</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="bankBalance" placeholder="Balance" step="0.01"
+                           class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors mobile-touch-button text-sm sm:text-base">
+                    <i class="fas fa-plus mr-2"></i>Add Bank Account
+                </button>
+            </form>
+            
+            <div id="bankAccountsList" class="space-y-3 max-h-64 overflow-y-auto">
+                <!-- Bank account items will be added here -->
+            </div>
+        </div>
+
+        <!-- Income Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300 mb-6 sm:mb-8">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                <i class="fas fa-plus-circle mr-2 text-green-500"></i> Income
+            </h2>
+            
+            <form id="incomeForm" class="mb-4 sm:mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                    <input type="text" id="incomeSource" placeholder="Income Source" 
+                           class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base">
+                    <input type="number" id="incomeAmount" placeholder="Amount" step="0.01"
+                           class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base">
+                </div>
+                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors mobile-touch-button text-sm sm:text-base">
+                    <i class="fas fa-plus mr-2"></i>Add Income
+                </button>
+            </form>
+            
+            <div id="incomeList" class="space-y-3 max-h-64 overflow-y-auto">
+                <!-- Income items will be added here -->
+            </div>
+        </div>
+
+        <!-- Expenses Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300 mb-6 sm:mb-8">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                <i class="fas fa-minus-circle mr-2 text-red-500"></i> Expenses
+            </h2>
+            
+            <form id="expenseForm" class="mb-4 sm:mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                    <select id="expenseCategory" class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm sm:text-base">
+                        <option value="">Select Category</option>
+                        <option value="Housing">🏠 Housing</option>
+                        <option value="Food">🍔 Food</option>
+                        <option value="Transportation">🚗 Transportation</option>
+                        <option value="Healthcare">🏥 Healthcare</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Shopping">🛍️ Shopping</option>
+                        <option value="Utilities">⚡ Utilities</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                    <input type="number" id="expenseAmount" placeholder="Amount" step="0.01"
+                           class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base">
+                </div>
+                <input type="text" id="expenseDescription" placeholder="Description (optional)" 
+                       class="w-full px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 mb-4 text-sm sm:text-base">
+                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors mobile-touch-button text-sm sm:text-base">
+                    <i class="fas fa-minus mr-2"></i>Add Expense
+                </button>
+            </form>
+            
+            <div id="expenseList" class="space-y-3 max-h-64 overflow-y-auto">
+                <!-- Expense items will be added here -->
             </div>
         </div>
 
         <!-- Visual Charts Section -->
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
             <!-- Expense Pie Chart -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                    <span class="mr-2">🥧</span> Expense Distribution
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-purple-500"></i> 
+                    <span class="mobile-text-sm">Expense Distribution</span>
                 </h2>
                 <div class="flex justify-center mb-4">
-                    <canvas id="expenseChart" width="300" height="300"></canvas>
+                    <canvas id="expenseChart" class="mobile-chart" width="300" height="300"></canvas>
                 </div>
-                <div id="expenseChartLegend" class="grid grid-cols-2 gap-2 text-sm">
+                <div id="expenseChartLegend" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
                     <!-- Legend will be populated here -->
                 </div>
             </div>
-
             <!-- Income vs Expenses Bar Chart -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                    <span class="mr-2">📊</span> Income vs Expenses
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-blue-500"></i> 
+                    <span class="mobile-text-sm">Income vs Expenses</span>
                 </h2>
                 <div class="flex justify-center mb-4">
-                    <canvas id="incomeExpenseChart" width="300" height="300"></canvas>
+                    <canvas id="incomeExpenseChart" class="mobile-chart" width="300" height="300"></canvas>
                 </div>
-                <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+                <div class="text-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     Monthly comparison of income and expenses
                 </div>
             </div>
         </div>
-
         <!-- Budget Categories Overview -->
-        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                <span class="mr-2">📋</span> Expense Categories Breakdown
+        <div class="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-6 flex items-center">
+                <i class="fas fa-list-ul mr-2 text-indigo-500"></i> 
+                <span class="mobile-text-sm">Expense Categories Breakdown</span>
             </h2>
-            <div id="categoryBreakdown" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div id="categoryBreakdown" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <!-- Category breakdown will be displayed here -->
             </div>
         </div>
 
-
-
         <!-- Transaction History -->
-        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center mb-4 sm:mb-0">
-                    <span class="mr-2">📋</span> Recent Transactions
+        <div class="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 transition-colors duration-300">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <i class="fas fa-history mr-2 text-teal-500"></i> 
+                    <span class="mobile-text-sm">Recent Transactions</span>
                 </h2>
-                <div class="flex space-x-2">
-                    <button id="loadFromDriveBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        📥 Load from Cloud
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                    <button id="loadFromDriveBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors mobile-touch-button w-full sm:w-auto">
+                        <i class="fas fa-cloud-download-alt mr-1"></i> Load from Cloud
                     </button>
-                    <button id="clearAllBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        Clear All Data
+                    <button id="clearAllBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors mobile-touch-button w-full sm:w-auto">
+                        <i class="fas fa-trash mr-1"></i> Clear All Data
                     </button>
                 </div>
             </div>
@@ -97,7 +408,7 @@
                 <!-- Transaction history will be displayed here -->
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Footer -->
     <footer class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white mt-12">
@@ -108,7 +419,7 @@
                 <div class="lg:col-span-2">
                     <div class="flex items-center space-x-3 mb-3">
                         <div class="w-10 h-10 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-lg flex items-center justify-center shadow-lg">
-                            <span class="text-white font-bold text-lg">🌐</span>
+                            <i class="fas fa-globe text-white text-lg"></i>
                         </div>
                         <div>
                             <h3 class="text-xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
@@ -121,7 +432,7 @@
                         Empowering businesses with cutting-edge digital solutions and innovative software.
                     </p>
                     <div class="flex items-center space-x-2 text-sm text-blue-200">
-                        <span>🌍</span>
+                        <i class="fas fa-globe-americas"></i>
                         <span>Visit:</span>
                         <a href="https://www.pluxcore.com" target="_blank" rel="noopener noreferrer" 
                            class="text-blue-300 hover:text-blue-100 font-medium transition-colors duration-200">
@@ -129,52 +440,49 @@
                         </a>
                     </div>
                 </div>
-
                 <!-- Developer Info -->
                 <div>
                     <h4 class="text-sm font-semibold mb-3 text-blue-200">Development</h4>
                     <div class="space-y-2">
                         <div class="flex items-center space-x-2">
-                            <span class="text-purple-300">👨‍💻</span>
+                            <i class="fas fa-code text-purple-300"></i>
                             <span class="text-gray-300 text-sm">Developed by</span>
                         </div>
                         <p class="text-white font-semibold text-sm">Roshith Priyadarshana</p>
                         <p class="text-xs text-gray-400">Full-Stack Developer</p>
                     </div>
                 </div>
-
                 <!-- Quick Links & Social -->
                 <div>
                     <h4 class="text-sm font-semibold mb-3 text-blue-200">Connect</h4>
                     <div class="space-y-2 mb-4">
                         <a href="#" onclick="budgetManager.openHelpModal(); return false;" class="block text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm">
-                            ❓ Help & Support
+                            <i class="fas fa-question-circle mr-1"></i> Help & Support
                         </a>
                         <a href="https://www.pluxcore.com" target="_blank" rel="noopener noreferrer" class="block text-gray-300 hover:text-blue-300 transition-colors duration-200 text-sm">
-                            🌐 PluxCore Website
+                            <i class="fas fa-globe mr-1"></i> PluxCore Website
                         </a>
                     </div>
                     <div class="flex space-x-3">
                         <a href="#" target="_blank" rel="noopener noreferrer" 
                            class="w-8 h-8 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                            <span class="text-white font-bold text-sm">f</span>
+                            <i class="fab fa-facebook-f text-white text-sm"></i>
                         </a>
                         <a href="#" target="_blank" rel="noopener noreferrer" 
                            class="w-8 h-8 bg-sky-500 hover:bg-sky-400 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                            <span class="text-white font-bold text-sm">𝕏</span>
+                            <i class="fab fa-twitter text-white text-sm"></i>
                         </a>
                         <a href="#" target="_blank" rel="noopener noreferrer" 
                            class="w-8 h-8 bg-blue-700 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                            <span class="text-white font-bold text-sm">in</span>
+                            <i class="fab fa-linkedin-in text-white text-sm"></i>
                         </a>
                         <a href="#" target="_blank" rel="noopener noreferrer" 
                            class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                            <span class="text-white font-bold text-sm">📷</span>
+                            <i class="fab fa-instagram text-white text-sm"></i>
                         </a>
                     </div>
                 </div>
             </div>
-
             <!-- Bottom Section -->
             <div class="border-t border-gray-700 pt-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center text-sm">
@@ -184,52 +492,49 @@
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="w-5 h-5 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded flex items-center justify-center">
-                                <span class="text-white text-xs font-bold">💰</span>
+                                <i class="fas fa-wallet text-white text-xs"></i>
                             </span>
                             <span class="text-blue-200 font-semibold text-sm">BudgetMaster v1.0</span>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4 text-gray-400 text-xs">
                         <span class="flex items-center space-x-1">
-                            <span>🔒</span>
+                            <i class="fas fa-lock"></i>
                             <span>Privacy First</span>
                         </span>
                         <span class="flex items-center space-x-1">
-                            <span>☁️</span>
+                            <i class="fas fa-cloud"></i>
                             <span>Cloud Sync</span>
                         </span>
                         <span class="flex items-center space-x-1">
-                            <span>📱</span>
+                            <i class="fas fa-mobile-alt"></i>
                             <span>Responsive</span>
                         </span>
                     </div>
                 </div>
             </div>
-
             <!-- Decorative Elements -->
-            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+            <!--<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>-->
         </div>
     </footer>
-
     <!-- Hidden file input for import -->
     <input type="file" id="fileInput" accept=".json" style="display: none;">
-
     <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-full max-w-lg mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto mobile-modal">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
-                    <span class="mr-2">⚙️</span> Settings
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <i class="fas fa-cog mr-2"></i> Settings
                 </h2>
                 <div class="flex items-center space-x-2">
                     <div class="relative">
-                        <button id="googleDriveBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1">
+                        <button id="googleDriveBtn" class="bg-red-500 hover:bg-red-600 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1 mobile-touch-button">
                             <img id="profilePicture" src="" alt="" class="w-4 h-4 rounded-full hidden">
                             <span id="driveButtonText">🔗 Connect</span>
                         </button>
                         
                         <!-- Account Menu Dropdown -->
-                        <div id="accountMenu" class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50 hidden">
+                        <div id="accountMenu" class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50 hidden mobile-modal">
                             <div id="userProfile" class="p-4 border-b border-gray-100 dark:border-gray-600 hidden">
                                 <div class="flex items-center space-x-3">
                                     <img id="userAvatarLarge" src="" alt="Profile" class="w-10 h-10 rounded-full">
@@ -240,19 +545,19 @@
                                 </div>
                             </div>
                             <div class="p-2">
-                                <button id="switchAccountBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors">
-                                    <span>🔄</span>
+                                <button id="switchAccountBtn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center space-x-2 transition-colors mobile-touch-button">
+                                    <i class="fas fa-sync-alt"></i>
                                     <span>Switch Account</span>
                                 </button>
-                                <button id="signOutMenuBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded flex items-center space-x-2 transition-colors">
-                                    <span>🚪</span>
+                                <button id="signOutMenuBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded flex items-center space-x-2 transition-colors mobile-touch-button">
+                                    <i class="fas fa-sign-out-alt"></i>
                                     <span>Sign Out</span>
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl">
-                        ✕
+                    <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl mobile-touch-button">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
@@ -262,41 +567,39 @@
                 <div id="driveActions" class="hidden bg-blue-50 dark:bg-blue-900 rounded-lg p-3">
                     <div class="grid grid-cols-3 gap-2">
                         <button id="syncNowBtnSettings" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                            <span>☁️</span>
+                            <i class="fas fa-sync"></i>
                             <span>Sync</span>
                         </button>
                         <button id="loadFromDriveBtnSettings" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                            <span>📥</span>
+                            <i class="fas fa-download"></i>
                             <span>Load</span>
                         </button>
                         <button id="signOutBtnSettings" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                            <span>🚪</span>
+                            <i class="fas fa-sign-out-alt"></i>
                             <span>Sign Out</span>
                         </button>
                     </div>
                 </div>
-
                 <!-- Theme Setting -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                        <span class="mr-2">🌙</span> Theme
+                        <i class="fas fa-moon mr-2"></i> Theme
                     </h3>
                     <div class="flex space-x-2">
                         <button id="lightModeBtn" class="flex-1 py-1.5 px-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center space-x-1 text-sm">
-                            <span>☀️</span>
+                            <i class="fas fa-sun"></i>
                             <span>Light</span>
                         </button>
                         <button id="darkModeBtn" class="flex-1 py-1.5 px-3 rounded-lg border-2 transition-all duration-200 flex items-center justify-center space-x-1 text-sm">
-                            <span>🌙</span>
+                            <i class="fas fa-moon"></i>
                             <span>Dark</span>
                         </button>
                     </div>
                 </div>
-
                 <!-- Currency Setting -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                        <span class="mr-2">💱</span> Currency
+                        <i class="fas fa-coins mr-2"></i> Currency
                     </h3>
                     <select id="currencySelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm">
                         <!-- Major World Currencies -->
@@ -481,39 +784,36 @@
                         </optgroup>
                     </select>
                 </div>
-
                 <!-- Data Management Section -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                        <span class="mr-2">💾</span> Data Management
+                        <i class="fas fa-database mr-2"></i> Data Management
                     </h3>
                     <div class="grid grid-cols-2 gap-2">
                         <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                            <span>📊</span>
+                            <i class="fas fa-file-export"></i>
                             <span>Export</span>
                         </button>
                         <button id="importBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                            <span>📁</span>
+                            <i class="fas fa-file-import"></i>
                             <span>Import</span>
                         </button>
                     </div>
                 </div>
-
                 <!-- Help Section -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                        <span class="mr-2">❓</span> Help & Support
+                        <i class="fas fa-question-circle mr-2"></i> Help & Support
                     </h3>
                     <button id="helpBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1">
-                        <span>❓</span>
+                        <i class="fas fa-question-circle"></i>
                         <span>Help & Setup Guide</span>
                     </button>
                 </div>
-
                 <!-- App Info -->
                 <div>
                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                        <span class="mr-2">ℹ️</span> About
+                        <i class="fas fa-info-circle mr-2"></i> About
                     </h3>
                     <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         <p><strong>BudgetMaster</strong> v1.0 - Personal Finance Manager</p>
@@ -521,7 +821,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="mt-4 flex justify-end">
                 <button id="saveSettingsBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     Save Settings
@@ -529,16 +828,16 @@
             </div>
         </div>
     </div>
-
     <!-- Help Modal -->
-    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
-                    <span class="mr-2">❓</span> Help & Setup Guide
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-4xl mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto mobile-modal">
+            <div class="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+                    <i class="fas fa-question-circle mr-2"></i> 
+                    <span class="mobile-text-sm">Help & Setup Guide</span>
                 </h2>
-                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">
-                    ✕
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl sm:text-2xl mobile-touch-button">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             
@@ -546,7 +845,7 @@
                 <!-- Quick Start Guide -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <span class="mr-2">🚀</span> Quick Start Guide
+                        <i class="fas fa-rocket mr-2"></i> Quick Start Guide
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
@@ -567,16 +866,15 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Cloud Sync (Firebase) Setup -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <span class="mr-2">☁️</span> Firebase Cloud Sync Setup
+                        <i class="fas fa-cloud mr-2"></i> Firebase Cloud Sync Setup
                     </h3>
                     <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
                         <div class="mb-4">
                             <div class="flex items-center mb-3">
-                                <span class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">⚠️</span>
+                                <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mr-3"></i>
                                 <p class="text-sm text-gray-700 dark:text-gray-300 font-semibold">Set up Firebase to enable secure cloud sync across devices (optional).</p>
                             </div>
                         </div>
@@ -593,7 +891,6 @@
                                     <li>Disable Google Analytics (optional) and finish</li>
                                 </ol>
                             </div>
-
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">2</span>
@@ -605,7 +902,6 @@
                                     <li>Copy the Firebase config object</li>
                                 </ol>
                             </div>
-
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">3</span>
@@ -618,7 +914,6 @@
                                     <li>Enable Firestore</li>
                                 </ol>
                             </div>
-
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">4</span>
@@ -630,7 +925,6 @@
                                     <li>Save changes</li>
                                 </ol>
                             </div>
-
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-700">
                                 <h4 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
                                     <span class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-2">5</span>
@@ -648,7 +942,7 @@
                         
                         <div class="mt-6 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
                             <div class="flex items-start">
-                                <span class="text-green-600 dark:text-green-400 mr-2">✅</span>
+                                <i class="fas fa-check-circle text-green-600 dark:text-green-400 mr-2 mt-1"></i>
                                 <div>
                                     <p class="text-sm font-semibold text-green-800 dark:text-green-200 mb-1">Once Setup is Complete:</p>
                                     <ul class="text-sm text-green-700 dark:text-green-300 space-y-1">
@@ -662,56 +956,54 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Features Overview -->
                 <div class="border-b border-gray-200 dark:border-gray-600 pb-6">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <span class="mr-2">✨</span> Features Overview
+                        <i class="fas fa-star mr-2"></i> Features Overview
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">🏦</span> Bank Account Management
+                                <i class="fas fa-university mr-2"></i> Bank Account Management
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">Track multiple bank accounts with different purposes and update balances easily.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">📊</span> Visual Charts
+                                <i class="fas fa-chart-pie mr-2"></i> Visual Charts
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">View your spending patterns with interactive pie charts and bar graphs.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">💱</span> Multi-Currency Support
+                                <i class="fas fa-coins mr-2"></i> Multi-Currency Support
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">Support for 100+ world currencies with proper formatting.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">🌙</span> Dark/Light Theme
+                                <i class="fas fa-moon mr-2"></i> Dark/Light Theme
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">Switch between light and dark modes for comfortable viewing.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">📥</span> Import/Export
+                                <i class="fas fa-file-import mr-2"></i> Import/Export
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">Backup your data or import from other sources with JSON files.</p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2 flex items-center">
-                                <span class="mr-2">☁️</span> Cloud Sync
+                                <i class="fas fa-cloud mr-2"></i> Cloud Sync
                             </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-300">Sync your data across devices with Firebase cloud integration.</p>
                         </div>
                     </div>
                 </div>
-
                 <!-- FAQ Section -->
                 <div>
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <span class="mr-2">❓</span> Frequently Asked Questions
+                        <i class="fas fa-question-circle mr-2"></i> Frequently Asked Questions
                     </h3>
                     <div class="space-y-4">
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -733,7 +1025,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="mt-8 flex justify-end">
                 <button id="closeHelpBtn2" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                     Got it!
@@ -743,6 +1034,33 @@
     </div>
 
     <script>
+        // Performance monitoring utility
+        class PerformanceMonitor {
+            static measure(name, fn) {
+                const start = performance.now();
+                const result = fn();
+                const end = performance.now();
+                
+                if (end - start > 100) { // Log slow operations
+                    console.warn(`Slow operation: ${name} took ${(end - start).toFixed(2)}ms`);
+                }
+                
+                return result;
+            }
+            
+            static async measureAsync(name, fn) {
+                const start = performance.now();
+                const result = await fn();
+                const end = performance.now();
+                
+                if (end - start > 100) { // Log slow operations
+                    console.warn(`Slow async operation: ${name} took ${(end - start).toFixed(2)}ms`);
+                }
+                
+                return result;
+            }
+        }
+        
         class BudgetManager {
             constructor() {
                 this.data = this.loadData();
@@ -778,16 +1096,6 @@
                     '#7E22CE', // Purple-700
                     '#B91C1C', // Red-700
                     '#0F766E', // Teal-700
-                    
-                    // Additional sophisticated colors
-                    '#374151', // Gray-700
-                    '#1F2937', // Gray-800
-                    '#111827', // Gray-900
-                    '#0F172A', // Slate-900
-                    '#581C87', // Purple-900
-                    '#7F1D1D', // Red-900
-                    '#064E3B', // Emerald-900
-                    '#0C4A6E'  // Sky-900
                 ];
                 // Currency symbols mapping
                 this.currencySymbols = {
@@ -949,46 +1257,63 @@
                     'BTN': 'Nu',
                     'MVR': 'Rf'
                 };
-                // Firebase config placeholders (replace with your actual Firebase project config)
+                // Firebase config with fallback values
                 this.firebaseConfig = {
-                    apiKey: 'YOUR_FIREBASE_API_KEY',
-                    authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
-                    projectId: 'YOUR_FIREBASE_PROJECT_ID',
-                    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
-                    messagingSenderId: 'YOUR_FIREBASE_SENDER_ID',
-                    appId: 'YOUR_FIREBASE_APP_ID'
+                    apiKey: window.FIREBASE_CONFIG?.apiKey || 'YOUR_FIREBASE_API_KEY',
+                    authDomain: window.FIREBASE_CONFIG?.authDomain || 'YOUR_FIREBASE_AUTH_DOMAIN',
+                    projectId: window.FIREBASE_CONFIG?.projectId || 'YOUR_FIREBASE_PROJECT_ID',
+                    storageBucket: window.FIREBASE_CONFIG?.storageBucket || 'YOUR_FIREBASE_STORAGE_BUCKET',
+                    messagingSenderId: window.FIREBASE_CONFIG?.messagingSenderId || 'YOUR_FIREBASE_SENDER_ID',
+                    appId: window.FIREBASE_CONFIG?.appId || 'YOUR_FIREBASE_APP_ID'
                 };
+                
+                // Check if Firebase config is properly set
+                this.isFirebaseConfigured = !Object.values(this.firebaseConfig).some(val => 
+                    val.startsWith('YOUR_FIREBASE_')
+                );
                 this.firebaseApp = null;
                 this.firebaseAuth = null;
                 this.firebaseDb = null; // Firestore
                 this.firebaseUser = null;
                 this.isSignedIn = false;
                 this.lastRemoteVersion = null;
-
+                this.updateTimeout = null;
+                this.lastUpdateTime = 0;
+                this.saveQueue = [];
+                this.isSaving = false;
                 this.init();
                 this.addSampleDataIfEmpty();
                 this.initFirebase();
                 this.applyTheme();
             }
-
             init() {
                 this.bindEvents();
                 this.updateDisplay();
             }
-
             async initFirebase() {
+                if (!this.isFirebaseConfigured) {
+                    console.warn('Firebase not configured - using local storage only');
+                    return;
+                }
+                
                 try {
                     // Dynamically load Firebase scripts (to keep single-file approach)
-                    const loadScript = (src) => new Promise((resolve, reject) => { const s=document.createElement('script'); s.src=src; s.onload=resolve; s.onerror=reject; document.head.appendChild(s); });
+                    const loadScript = (src) => new Promise((resolve, reject) => { 
+                        const s=document.createElement('script'); 
+                        s.src=src; 
+                        s.onload=resolve; 
+                        s.onerror=reject; 
+                        document.head.appendChild(s); 
+                    });
                     // Use version pinning for stability
                     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
                     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
                     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
-
+                    
                     this.firebaseApp = firebase.initializeApp(this.firebaseConfig);
                     this.firebaseAuth = firebase.auth();
                     this.firebaseDb = firebase.firestore();
-
+                    
                     this.firebaseAuth.onAuthStateChanged(user => {
                         this.firebaseUser = user;
                         this.isSignedIn = !!user;
@@ -997,48 +1322,43 @@
                         }
                         this.updateCloudUI();
                     });
-
                     this.updateCloudUI();
                 } catch (e) {
                     console.error('Firebase init failed', e);
-                    this.showNotification('Firebase not configured', 'error');
+                    this.showNotification('Firebase initialization failed - using local storage only', 'warning');
                 }
             }
-
             updateCloudUI() {
                 const button = document.getElementById('googleDriveBtn');
                 const buttonText = document.getElementById('driveButtonText');
                 const profilePicture = document.getElementById('profilePicture');
-                const syncStatus = document.getElementById('syncStatus');
-                const syncStatusText = document.getElementById('syncStatusText');
                 const driveActions = document.getElementById('driveActions');
                 const userProfile = document.getElementById('userProfile');
-                // Repurpose existing UI for Firebase
+                
                 if (this.isSignedIn) {
                     this.updateUserProfile();
                     buttonText.textContent = 'Connected';
                     button.className = 'bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1';
                     button.disabled = false;
                     driveActions.classList.remove('hidden');
-                    syncStatus.classList.remove('hidden');
                     userProfile.classList.remove('hidden');
-                    syncStatusText.textContent = '✅ Ready';
-                    syncStatusText.className = 'text-green-600';
                 } else {
                     buttonText.textContent = '🔗 Connect';
                     profilePicture.classList.add('hidden');
                     button.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1';
                     button.disabled = false;
                     driveActions.classList.add('hidden');
-                    syncStatus.classList.add('hidden');
                     userProfile.classList.add('hidden');
                 }
             }
-
             async updateUserProfile() {
                 try {
                     if (!this.firebaseUser) return;
-                    const userInfo = { name: this.firebaseUser.displayName || 'User', email: this.firebaseUser.email, picture: this.firebaseUser.photoURL };
+                    const userInfo = { 
+                        name: this.firebaseUser.displayName || 'User', 
+                        email: this.firebaseUser.email, 
+                        picture: this.firebaseUser.photoURL 
+                    };
                     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNFNUU3RUIiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI4IiB5PSI4Ij4KPHBhdGggZD0iTTEyIDEyQzE0LjIwOTEgMTIgMTYgMTAuMjA5MSAxNiA4QzE2IDUuNzkwODYgMTQuMjA5MSA0IDEyIDRDOS43OTA4NiA0IDggNS43OTA4NiA4IDhDOCAxMC4yMDkxIDkuNzkwODYgMTIgMTIgMTJaIiBmaWxsPSIjNkI3MjgwIi8+CjxwYXRoIGQ9Ik0xMiAxNEM5LjMzIDEzLjk5IDcuMDEgMTUuNzQgNiAxOC4yNFYyMEgxOFYxOC4yNEMxNi45OSAxNS43NCAxNC42NyAxMy45OSAxMiAxNFoiIGZpbGw9IiM2QjcyODAiLz4KPC9zdmc+Cjwvc3ZnPgo=';
                     
                     // Update all profile elements
@@ -1046,11 +1366,6 @@
                     const userAvatarLarge = document.getElementById('userAvatarLarge');
                     const userNameDisplay = document.getElementById('userNameDisplay');
                     const userEmailDisplay = document.getElementById('userEmailDisplay');
-                    
-                    // Legacy elements (keep for compatibility)
-                    const userName = document.getElementById('userName');
-                    const userEmail = document.getElementById('userEmail');
-                    const userAvatar = document.getElementById('userAvatar');
                     
                     const name = userInfo.name || 'Google User';
                     const email = userInfo.email || 'Connected';
@@ -1065,11 +1380,6 @@
                     if (userNameDisplay) userNameDisplay.textContent = name;
                     if (userEmailDisplay) userEmailDisplay.textContent = email;
                     
-                    // Update legacy elements
-                    if (userName) userName.textContent = name;
-                    if (userEmail) userEmail.textContent = email;
-                    if (userAvatar) userAvatar.src = picture;
-                    
                 } catch (error) {
                     console.error('Error fetching user profile:', error);
                     // Fallback for error cases
@@ -1079,174 +1389,228 @@
                     }
                 }
             }
-
             addSampleDataIfEmpty() {
                 // Add sample data only if no data exists
                 if (this.data.income.length === 0 && this.data.expenses.length === 0 && this.data.bankAccounts.length === 0) {
                     // Sample bank accounts
                     this.data.bankAccounts = [
-                        { id: 1001, name: "Chase Checking", purpose: "Checking", balance: 2500.00, createdDate: "12/1/2024" },
-                        { id: 1002, name: "Savings Account", purpose: "Savings", balance: 8500.00, createdDate: "12/1/2024" },
-                        { id: 1003, name: "Emergency Fund", purpose: "Emergency", balance: 5000.00, createdDate: "12/1/2024" }
+                        { id: 1001, name: "Chase Checking", purpose: "Checking", balance: 2500.00, createdDate: this.formatDate(new Date()) },
+                        { id: 1002, name: "Savings Account", purpose: "Savings", balance: 8500.00, createdDate: this.formatDate(new Date()) },
+                        { id: 1003, name: "Emergency Fund", purpose: "Emergency", balance: 5000.00, createdDate: this.formatDate(new Date()) }
                     ];
-
                     // Sample income
                     this.data.income = [
-                        { id: 2001, source: "Salary", amount: 4500.00, date: "12/1/2024", type: "income" },
-                        { id: 2002, source: "Freelance Work", amount: 800.00, date: "12/5/2024", type: "income" },
-                        { id: 2003, source: "Investment Returns", amount: 150.00, date: "12/10/2024", type: "income" }
+                        { id: 2001, source: "Salary", amount: 4500.00, date: this.formatDate(new Date()), type: "income" },
+                        { id: 2002, source: "Freelance Work", amount: 800.00, date: this.formatDate(new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)), type: "income" },
+                        { id: 2003, source: "Investment Returns", amount: 150.00, date: this.formatDate(new Date(Date.now() - 9 * 24 * 60 * 60 * 1000)), type: "income" }
                     ];
-
                     // Sample expenses with variety
                     this.data.expenses = [
-                        { id: 3001, category: "Housing", amount: 1200.00, description: "Monthly Rent", date: "12/1/2024", type: "expense" },
-                        { id: 3002, category: "Food", amount: 85.50, description: "Grocery Shopping", date: "12/2/2024", type: "expense" },
-                        { id: 3003, category: "Transportation", amount: 45.00, description: "Gas Station", date: "12/3/2024", type: "expense" },
-                        { id: 3004, category: "Utilities", amount: 120.00, description: "Electricity Bill", date: "12/4/2024", type: "expense" },
-                        { id: 3005, category: "Entertainment", amount: 25.00, description: "Movie Tickets", date: "12/5/2024", type: "expense" },
-                        { id: 3006, category: "Healthcare", amount: 75.00, description: "Doctor Visit", date: "12/6/2024", type: "expense" },
-                        { id: 3007, category: "Shopping", amount: 150.00, description: "Clothing", date: "12/7/2024", type: "expense" },
-                        { id: 3008, category: "Food", amount: 32.50, description: "Restaurant Dinner", date: "12/8/2024", type: "expense" },
-                        { id: 3009, category: "Transportation", amount: 15.00, description: "Bus Pass", date: "12/9/2024", type: "expense" },
-                        { id: 3010, category: "Other", amount: 40.00, description: "Gift for Friend", date: "12/10/2024", type: "expense" }
+                        { id: 3001, category: "Housing", amount: 1200.00, description: "Monthly Rent", date: this.formatDate(new Date()), type: "expense" },
+                        { id: 3002, category: "Food", amount: 85.50, description: "Grocery Shopping", date: this.formatDate(new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3003, category: "Transportation", amount: 45.00, description: "Gas Station", date: this.formatDate(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3004, category: "Utilities", amount: 120.00, description: "Electricity Bill", date: this.formatDate(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3005, category: "Entertainment", amount: 25.00, description: "Movie Tickets", date: this.formatDate(new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3006, category: "Healthcare", amount: 75.00, description: "Doctor Visit", date: this.formatDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3007, category: "Shopping", amount: 150.00, description: "Clothing", date: this.formatDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3008, category: "Food", amount: 32.50, description: "Restaurant Dinner", date: this.formatDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3009, category: "Transportation", amount: 15.00, description: "Bus Pass", date: this.formatDate(new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)), type: "expense" },
+                        { id: 3010, category: "Other", amount: 40.00, description: "Gift for Friend", date: this.formatDate(new Date(Date.now() - 9 * 24 * 60 * 60 * 1000)), type: "expense" }
                     ];
-
                     this.saveData();
                 }
             }
-
+            formatDate(date) {
+                return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+            }
+            
+            sanitizeInput(input) {
+                if (typeof input !== 'string') return input;
+                
+                return input
+                    .trim()
+                    .replace(/[<>]/g, '') // Remove potential HTML tags
+                    .substring(0, 1000); // Limit length
+            }
             bindEvents() {
-                document.getElementById('bankAccountForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.addBankAccount();
-                });
-
-                document.getElementById('incomeForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.addIncome();
-                });
-
-                document.getElementById('expenseForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.addExpense();
-                });
-
-                document.getElementById('clearAllBtn').addEventListener('click', () => {
-                    if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                        this.clearAllData();
-                    }
-                });
-
-                document.getElementById('loadFromDriveBtn').addEventListener('click', () => {
-                    this.loadFromFirebase();
-                });
-
-                // Profile dropdown events (legacy - kept for compatibility)
-                document.getElementById('syncNowBtn').addEventListener('click', () => {
-                    this.syncToFirebase();
-                    this.hideProfileDropdown();
-                });
-
-                document.getElementById('loadFromDriveDropdownBtn').addEventListener('click', () => {
-                    this.loadFromFirebase();
-                    this.hideProfileDropdown();
-                });
-
-                document.getElementById('signOutBtn').addEventListener('click', () => {
-                    this.signOutFromFirebase();
-                    this.hideProfileDropdown();
-                });
-
+                // Form events
+                const bankForm = document.getElementById('bankAccountForm');
+                if (bankForm) {
+                    bankForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.addBankAccount();
+                    });
+                }
+                
+                const incomeForm = document.getElementById('incomeForm');
+                if (incomeForm) {
+                    incomeForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.addIncome();
+                    });
+                }
+                
+                const expenseForm = document.getElementById('expenseForm');
+                if (expenseForm) {
+                    expenseForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.addExpense();
+                    });
+                }
+                
+                // Button events
+                const clearBtn = document.getElementById('clearAllBtn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                            this.clearAllData();
+                        }
+                    });
+                }
+                
+                const loadBtn = document.getElementById('loadFromDriveBtn');
+                if (loadBtn) {
+                    loadBtn.addEventListener('click', () => {
+                        this.loadFromFirebase();
+                    });
+                }
+                
+                const settingsBtn = document.getElementById('settingsBtn');
+                if (settingsBtn) {
+                    settingsBtn.addEventListener('click', () => {
+                        this.openSettingsModal();
+                    });
+                }
+                
                 // Settings modal events
-                document.getElementById('settingsBtn').addEventListener('click', () => {
-                    this.openSettingsModal();
-                });
-
-                document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-                    this.closeSettingsModal();
-                });
-
-                document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-                    this.saveSettings();
-                });
-
-                document.getElementById('lightModeBtn').addEventListener('click', () => {
-                    this.setTheme('light');
-                });
-
-                document.getElementById('darkModeBtn').addEventListener('click', () => {
-                    this.setTheme('dark');
-                });
-
-                // Settings-based button events
-                document.getElementById('googleDriveBtn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.handleCloudAction();
-                });
-
-                document.getElementById('exportBtn').addEventListener('click', () => {
-                    this.exportData();
-                });
-
-                document.getElementById('importBtn').addEventListener('click', () => {
-                    document.getElementById('fileInput').click();
-                });
-
-                document.getElementById('fileInput').addEventListener('change', (e) => {
-                    this.importData(e.target.files[0]);
-                });
-
-                document.getElementById('helpBtn').addEventListener('click', () => {
-                    this.openHelpModal();
-                });
-
+                const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+                if (closeSettingsBtn) {
+                    closeSettingsBtn.addEventListener('click', () => {
+                        this.closeSettingsModal();
+                    });
+                }
+                
+                const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+                if (saveSettingsBtn) {
+                    saveSettingsBtn.addEventListener('click', () => {
+                        this.saveSettings();
+                    });
+                }
+                
+                const lightModeBtn = document.getElementById('lightModeBtn');
+                if (lightModeBtn) {
+                    lightModeBtn.addEventListener('click', () => {
+                        this.setTheme('light');
+                    });
+                }
+                
+                const darkModeBtn = document.getElementById('darkModeBtn');
+                if (darkModeBtn) {
+                    darkModeBtn.addEventListener('click', () => {
+                        this.setTheme('dark');
+                    });
+                }
+                
+                // Cloud actions
+                const googleDriveBtn = document.getElementById('googleDriveBtn');
+                if (googleDriveBtn) {
+                    googleDriveBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.handleCloudAction();
+                    });
+                }
+                
+                const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', () => {
+                        this.exportData();
+                    });
+                }
+                
+                const importBtn = document.getElementById('importBtn');
+                if (importBtn) {
+                    importBtn.addEventListener('click', () => {
+                        document.getElementById('fileInput').click();
+                    });
+                }
+                
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput) {
+                    fileInput.addEventListener('change', (e) => {
+                        this.importData(e.target.files[0]);
+                    });
+                }
+                
+                const helpBtn = document.getElementById('helpBtn');
+                if (helpBtn) {
+                    helpBtn.addEventListener('click', () => {
+                        this.openHelpModal();
+                    });
+                }
+                
                 // Settings Cloud actions
-                document.getElementById('syncNowBtnSettings').addEventListener('click', () => {
-                    this.syncToFirebase();
-                });
-
-                document.getElementById('loadFromDriveBtnSettings').addEventListener('click', () => {
-                    this.loadFromFirebase();
-                });
-
-                document.getElementById('signOutBtnSettings').addEventListener('click', () => {
-                    this.signOutFromFirebase();
-                });
-
+                const syncNowBtnSettings = document.getElementById('syncNowBtnSettings');
+                if (syncNowBtnSettings) {
+                    syncNowBtnSettings.addEventListener('click', () => {
+                        this.syncToFirebase();
+                    });
+                }
+                
+                const loadFromDriveBtnSettings = document.getElementById('loadFromDriveBtnSettings');
+                if (loadFromDriveBtnSettings) {
+                    loadFromDriveBtnSettings.addEventListener('click', () => {
+                        this.loadFromFirebase();
+                    });
+                }
+                
+                const signOutBtnSettings = document.getElementById('signOutBtnSettings');
+                if (signOutBtnSettings) {
+                    signOutBtnSettings.addEventListener('click', () => {
+                        this.signOutFromFirebase();
+                    });
+                }
+                
                 // Account menu events
-                document.getElementById('switchAccountBtn').addEventListener('click', () => {
-                    this.switchFirebaseAccount();
-                    this.hideAccountMenu();
-                });
-
-                document.getElementById('signOutMenuBtn').addEventListener('click', () => {
-                    this.signOutFromFirebase();
-                    this.hideAccountMenu();
-                });
-
+                const switchAccountBtn = document.getElementById('switchAccountBtn');
+                if (switchAccountBtn) {
+                    switchAccountBtn.addEventListener('click', () => {
+                        this.switchFirebaseAccount();
+                        this.hideAccountMenu();
+                    });
+                }
+                
+                const signOutMenuBtn = document.getElementById('signOutMenuBtn');
+                if (signOutMenuBtn) {
+                    signOutMenuBtn.addEventListener('click', () => {
+                        this.signOutFromFirebase();
+                        this.hideAccountMenu();
+                    });
+                }
+                
                 // Help modal events
-                document.getElementById('closeHelpBtn').addEventListener('click', () => {
-                    this.closeHelpModal();
-                });
-
-                document.getElementById('closeHelpBtn2').addEventListener('click', () => {
-                    this.closeHelpModal();
-                });
-
+                const closeHelpBtn = document.getElementById('closeHelpBtn');
+                if (closeHelpBtn) {
+                    closeHelpBtn.addEventListener('click', () => {
+                        this.closeHelpModal();
+                    });
+                }
+                
+                const closeHelpBtn2 = document.getElementById('closeHelpBtn2');
+                if (closeHelpBtn2) {
+                    closeHelpBtn2.addEventListener('click', () => {
+                        this.closeHelpModal();
+                    });
+                }
+                
                 // Close dropdown when clicking outside
                 document.addEventListener('click', (e) => {
-                    const dropdown = document.getElementById('profileDropdown');
                     const accountMenu = document.getElementById('accountMenu');
                     const button = document.getElementById('googleDriveBtn');
                     const settingsModal = document.getElementById('settingsModal');
                     const helpModal = document.getElementById('helpModal');
                     
-                    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
-                        this.hideProfileDropdown();
-                    }
-                    
                     // Close account menu when clicking outside
-                    if (!accountMenu.contains(e.target) && !button.contains(e.target)) {
+                    if (accountMenu && !accountMenu.contains(e.target) && button && !button.contains(e.target)) {
                         this.hideAccountMenu();
                     }
                     
@@ -1261,133 +1625,251 @@
                     }
                 });
             }
-
+            validateBankAccountInput(name, purpose, balance) {
+                const errors = [];
+                
+                if (!name || name.trim() === '') {
+                    errors.push('Bank name is required');
+                }
+                
+                if (name && name.length > 50) {
+                    errors.push('Bank name must be less than 50 characters');
+                }
+                
+                if (!purpose || purpose.trim() === '') {
+                    errors.push('Account purpose is required');
+                }
+                
+                if (isNaN(balance) || balance < 0) {
+                    errors.push('Balance must be a valid positive number');
+                }
+                
+                if (balance > 1000000000) {
+                    errors.push('Balance seems too large. Please verify.');
+                }
+                
+                return errors;
+            }
+            
             addBankAccount() {
                 const name = document.getElementById('bankName').value.trim();
                 const purpose = document.getElementById('accountPurpose').value;
                 const balance = parseFloat(document.getElementById('bankBalance').value);
-
-                if (!name || !purpose || isNaN(balance)) {
-                    alert('Please fill in all bank account details.');
+                
+                const errors = this.validateBankAccountInput(name, purpose, balance);
+                
+                if (errors.length > 0) {
+                    this.showNotification(errors.join(', '), 'error');
                     return;
                 }
-
+                
                 const account = {
                     id: Date.now(),
-                    name,
+                    name: this.sanitizeInput(name),
                     purpose,
                     balance,
-                    createdDate: new Date().toLocaleDateString()
+                    createdDate: this.formatDate(new Date())
                 };
-
                 this.data.bankAccounts.push(account);
                 this.saveData();
                 this.updateDisplay();
                 document.getElementById('bankAccountForm').reset();
+                this.showNotification('Bank account added successfully', 'success');
             }
-
+            validateIncomeInput(source, amount) {
+                const errors = [];
+                
+                if (!source || source.trim() === '') {
+                    errors.push('Income source is required');
+                }
+                
+                if (source && source.length > 100) {
+                    errors.push('Income source must be less than 100 characters');
+                }
+                
+                if (!amount || isNaN(amount) || amount <= 0) {
+                    errors.push('Amount must be a positive number');
+                }
+                
+                if (amount > 1000000) {
+                    errors.push('Amount seems too large. Please verify.');
+                }
+                
+                return errors;
+            }
+            
             addIncome() {
                 const source = document.getElementById('incomeSource').value.trim();
                 const amount = parseFloat(document.getElementById('incomeAmount').value);
-
-                if (!source || !amount || amount <= 0) {
-                    alert('Please enter a valid income source and amount.');
+                
+                const errors = this.validateIncomeInput(source, amount);
+                
+                if (errors.length > 0) {
+                    this.showNotification(errors.join(', '), 'error');
                     return;
                 }
-
+                
                 const income = {
                     id: Date.now(),
-                    source,
+                    source: this.sanitizeInput(source),
                     amount,
-                    date: new Date().toLocaleDateString(),
+                    date: this.formatDate(new Date()),
                     type: 'income'
                 };
-
                 this.data.income.push(income);
                 this.saveData();
                 this.updateDisplay();
                 document.getElementById('incomeForm').reset();
+                this.showNotification('Income added successfully', 'success');
             }
-
+            validateExpenseInput(category, amount, description) {
+                const errors = [];
+                
+                if (!category || category.trim() === '') {
+                    errors.push('Category is required');
+                }
+                
+                if (!amount || isNaN(amount) || amount <= 0) {
+                    errors.push('Amount must be a positive number');
+                }
+                
+                if (amount > 1000000) {
+                    errors.push('Amount seems too large. Please verify.');
+                }
+                
+                if (description && description.length > 100) {
+                    errors.push('Description must be less than 100 characters');
+                }
+                
+                return errors;
+            }
+            
             addExpense() {
                 const category = document.getElementById('expenseCategory').value;
                 const amount = parseFloat(document.getElementById('expenseAmount').value);
                 const description = document.getElementById('expenseDescription').value.trim();
-
-                if (!category || !amount || amount <= 0) {
-                    alert('Please select a category and enter a valid amount.');
+                
+                const errors = this.validateExpenseInput(category, amount, description);
+                
+                if (errors.length > 0) {
+                    this.showNotification(errors.join(', '), 'error');
                     return;
                 }
-
+                
                 const expense = {
                     id: Date.now(),
                     category,
                     amount,
-                    description: description || category,
-                    date: new Date().toLocaleDateString(),
+                    description: this.sanitizeInput(description) || category,
+                    date: this.formatDate(new Date()),
                     type: 'expense'
                 };
-
                 this.data.expenses.push(expense);
                 this.saveData();
                 this.updateDisplay();
                 document.getElementById('expenseForm').reset();
+                this.showNotification('Expense added successfully', 'success');
             }
-
-            updateDisplay() {
-                this.updateDailySummary();
-                this.updateSummary();
-                this.updateBankAccountsList();
-                this.updateIncomeList();
-                this.updateExpenseList();
-                this.updateCategoryBreakdown();
-                this.updateTransactionHistory();
-                this.drawCharts();
+            updateDisplay(force = false) {
+                const now = Date.now();
+                
+                // Debounce rapid updates
+                if (!force && now - this.lastUpdateTime < 100) {
+                    clearTimeout(this.updateTimeout);
+                    this.updateTimeout = setTimeout(() => this.updateDisplay(true), 100);
+                    return;
+                }
+                
+                this.lastUpdateTime = now;
+                
+                // Use requestAnimationFrame for smooth updates
+                requestAnimationFrame(() => {
+                    PerformanceMonitor.measure('updateDisplay', () => {
+                        this.updateDailySummary();
+                        this.updateSummary();
+                        this.updateBankAccountsList();
+                        this.updateIncomeList();
+                        this.updateExpenseList();
+                        this.updateCategoryBreakdown();
+                        this.updateTransactionHistory();
+                        this.drawCharts();
+                    });
+                });
             }
-
             drawCharts() {
-                this.drawExpensePieChart();
-                this.drawIncomeExpenseBarChart();
+                PerformanceMonitor.measure('drawCharts', () => {
+                    this.drawExpensePieChart();
+                    this.drawIncomeExpenseBarChart();
+                });
             }
-
+            resizeCanvas(canvas) {
+                const container = canvas.parentElement;
+                const rect = container.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const isMobile = window.innerWidth <= 640;
+                
+                // Responsive sizing
+                let size;
+                if (isMobile) {
+                    size = Math.min(rect.width - 20, 250); // Smaller on mobile
+                } else {
+                    size = Math.min(rect.width, 300); // Max 300px on desktop
+                }
+                
+                canvas.width = size * dpr;
+                canvas.height = size * dpr;
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+                
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                
+                return { width: size, height: size, ctx };
+            }
+            
             drawExpensePieChart() {
                 const canvas = document.getElementById('expenseChart');
-                const ctx = canvas.getContext('2d');
-                const centerX = canvas.width / 2;
-                const centerY = canvas.height / 2;
-                const radius = 120;
-
+                if (!canvas) return;
+                
+                const { width, height, ctx } = this.resizeCanvas(canvas);
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const radius = Math.min(width, height) / 2 - 20;
+                
                 // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+                ctx.clearRect(0, 0, width, height);
+                
                 // Calculate category totals
                 const categories = {};
                 this.data.expenses.forEach(expense => {
                     categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
                 });
-
                 const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
                 
                 if (total === 0) {
-                    ctx.fillStyle = '#E5E7EB';
+                    // Use theme-aware colors
+                    const isDark = document.documentElement.classList.contains('dark');
+                    ctx.fillStyle = isDark ? '#374151' : '#E5E7EB';
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
                     ctx.fill();
-                    ctx.fillStyle = '#6B7280';
+                    ctx.fillStyle = isDark ? '#9CA3AF' : '#6B7280';
                     ctx.font = '16px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText('No expenses yet', centerX, centerY);
                     return;
                 }
-
+                
                 let currentAngle = -Math.PI / 2;
                 const legendContainer = document.getElementById('expenseChartLegend');
-                legendContainer.innerHTML = '';
-
+                if (legendContainer) {
+                    legendContainer.innerHTML = '';
+                }
+                
                 Object.entries(categories).forEach(([category, amount], index) => {
                     const sliceAngle = (amount / total) * 2 * Math.PI;
                     const color = this.pastelColors[index % this.pastelColors.length];
-
+                    
                     // Draw slice
                     ctx.fillStyle = color;
                     ctx.beginPath();
@@ -1395,41 +1877,43 @@
                     ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
                     ctx.closePath();
                     ctx.fill();
-
+                    
                     // Draw border
                     ctx.strokeStyle = '#FFFFFF';
                     ctx.lineWidth = 2;
                     ctx.stroke();
-
+                    
                     // Add to legend
-                    const legendItem = document.createElement('div');
-                    legendItem.className = 'flex items-center space-x-2';
-                    legendItem.innerHTML = `
-                        <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-                        <span class="text-gray-700 dark:text-gray-300">${category}: $${amount.toFixed(2)}</span>
-                    `;
-                    legendContainer.appendChild(legendItem);
-
+                    if (legendContainer) {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center space-x-2';
+                        legendItem.innerHTML = `
+                            <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
+                            <span class="text-gray-700 dark:text-gray-300">${category}: ${this.formatCurrency(amount)}</span>
+                        `;
+                        legendContainer.appendChild(legendItem);
+                    }
+                    
                     currentAngle += sliceAngle;
                 });
             }
-
             drawIncomeExpenseBarChart() {
                 const canvas = document.getElementById('incomeExpenseChart');
+                if (!canvas) return;
+                
                 const ctx = canvas.getContext('2d');
                 
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+                
                 const totalIncome = this.data.income.reduce((sum, item) => sum + item.amount, 0);
                 const totalExpenses = this.data.expenses.reduce((sum, item) => sum + item.amount, 0);
                 const maxValue = Math.max(totalIncome, totalExpenses, 1000);
-
                 const barWidth = 80;
                 const barSpacing = 100;
                 const chartHeight = 200;
                 const chartBottom = 250;
-
+                
                 // Draw income bar
                 const incomeHeight = (totalIncome / maxValue) * chartHeight;
                 ctx.fillStyle = '#10B981';
@@ -1437,7 +1921,7 @@
                 ctx.strokeStyle = '#059669';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(50, chartBottom - incomeHeight, barWidth, incomeHeight);
-
+                
                 // Draw expense bar
                 const expenseHeight = (totalExpenses / maxValue) * chartHeight;
                 ctx.fillStyle = '#EF4444';
@@ -1445,7 +1929,7 @@
                 ctx.strokeStyle = '#DC2626';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(50 + barWidth + barSpacing, chartBottom - expenseHeight, barWidth, expenseHeight);
-
+                
                 // Add labels
                 ctx.fillStyle = '#374151';
                 ctx.font = '14px Arial';
@@ -1453,12 +1937,12 @@
                 
                 // Income label
                 ctx.fillText('Income', 50 + barWidth/2, chartBottom + 20);
-                ctx.fillText(`$${totalIncome.toFixed(2)}`, 50 + barWidth/2, chartBottom + 40);
+                ctx.fillText(this.formatCurrency(totalIncome), 50 + barWidth/2, chartBottom + 40);
                 
                 // Expense label
                 ctx.fillText('Expenses', 50 + barWidth + barSpacing + barWidth/2, chartBottom + 20);
-                ctx.fillText(`$${totalExpenses.toFixed(2)}`, 50 + barWidth + barSpacing + barWidth/2, chartBottom + 40);
-
+                ctx.fillText(this.formatCurrency(totalExpenses), 50 + barWidth + barSpacing + barWidth/2, chartBottom + 40);
+                
                 // Draw grid lines
                 ctx.strokeStyle = '#E5E7EB';
                 ctx.lineWidth = 1;
@@ -1473,17 +1957,16 @@
                     ctx.fillStyle = '#6B7280';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'right';
-                    ctx.fillText(`$${((maxValue / 5) * i).toFixed(0)}`, 25, y + 4);
+                    ctx.fillText(this.formatCurrency((maxValue / 5) * i), 25, y + 4);
                 }
             }
-
             updateDailySummary() {
-                const today = new Date().toLocaleDateString();
+                const today = this.formatDate(new Date());
                 const startOfWeek = new Date();
                 startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
-
+                
                 // Today's transactions
                 const todayIncome = this.data.income
                     .filter(item => item.date === today)
@@ -1492,40 +1975,51 @@
                 const todayExpenses = this.data.expenses
                     .filter(item => item.date === today)
                     .reduce((sum, item) => sum + item.amount, 0);
-
+                
                 // This week's expenses
                 const weekExpenses = this.data.expenses
                     .filter(item => new Date(item.date) >= startOfWeek)
                     .reduce((sum, item) => sum + item.amount, 0);
-
+                
                 // This month's expenses
                 const monthExpenses = this.data.expenses
                     .filter(item => new Date(item.date) >= startOfMonth)
                     .reduce((sum, item) => sum + item.amount, 0);
-
-                document.getElementById('todayIncome').textContent = this.formatCurrency(todayIncome);
-                document.getElementById('todayExpenses').textContent = this.formatCurrency(todayExpenses);
-                document.getElementById('weekExpenses').textContent = this.formatCurrency(weekExpenses);
-                document.getElementById('monthExpenses').textContent = this.formatCurrency(monthExpenses);
+                
+                const todayIncomeEl = document.getElementById('todayIncome');
+                if (todayIncomeEl) todayIncomeEl.textContent = this.formatCurrency(todayIncome);
+                
+                const todayExpensesEl = document.getElementById('todayExpenses');
+                if (todayExpensesEl) todayExpensesEl.textContent = this.formatCurrency(todayExpenses);
+                
+                const weekExpensesEl = document.getElementById('weekExpenses');
+                if (weekExpensesEl) weekExpensesEl.textContent = this.formatCurrency(weekExpenses);
+                
+                const monthExpensesEl = document.getElementById('monthExpenses');
+                if (monthExpensesEl) monthExpensesEl.textContent = this.formatCurrency(monthExpenses);
             }
-
             updateSummary() {
                 const totalIncome = this.data.income.reduce((sum, item) => sum + item.amount, 0);
                 const totalExpenses = this.data.expenses.reduce((sum, item) => sum + item.amount, 0);
                 const totalBankBalance = this.data.bankAccounts.reduce((sum, account) => sum + account.balance, 0);
-
-                document.getElementById('totalIncome').textContent = this.formatCurrency(totalIncome);
-                document.getElementById('totalExpenses').textContent = this.formatCurrency(totalExpenses);
-                document.getElementById('totalBankBalance').textContent = this.formatCurrency(totalBankBalance);
+                
+                const totalIncomeEl = document.getElementById('totalIncome');
+                if (totalIncomeEl) totalIncomeEl.textContent = this.formatCurrency(totalIncome);
+                
+                const totalExpensesEl = document.getElementById('totalExpenses');
+                if (totalExpensesEl) totalExpensesEl.textContent = this.formatCurrency(totalExpenses);
+                
+                const totalBankBalanceEl = document.getElementById('totalBankBalance');
+                if (totalBankBalanceEl) totalBankBalanceEl.textContent = this.formatCurrency(totalBankBalance);
             }
-
             updateBankAccountsList() {
                 const container = document.getElementById('bankAccountsList');
+                if (!container) return;
+                
                 container.innerHTML = '';
-
                 this.data.bankAccounts.forEach(account => {
                     const div = document.createElement('div');
-                    div.className = 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 rounded-lg p-4 border border-blue-200 dark:border-blue-700 transition-colors duration-300';
+                    div.className = 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 rounded-lg p-3 sm:p-4 border border-blue-200 dark:border-blue-700 transition-colors duration-300 mobile-list-item';
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-3">
                             <div>
@@ -1533,15 +2027,23 @@
                                 <p class="text-sm text-blue-600 dark:text-blue-400">${account.purpose}</p>
                             </div>
                             <button onclick="budgetManager.removeItem('bankAccounts', ${account.id})" 
-                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                    aria-label="Remove bank account: ${account.name}"
+                                    title="Remove this bank account">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-2xl font-bold text-blue-700 dark:text-blue-300">$${account.balance.toFixed(2)}</span>
+                            <span class="text-2xl font-bold text-blue-700 dark:text-blue-300">${this.formatCurrency(account.balance)}</span>
                             <div class="flex space-x-2">
                                 <button onclick="budgetManager.updateBalance(${account.id}, 'add')" 
-                                        class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">+</button>
+                                        class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs mobile-touch-button">
+                                    <i class="fas fa-plus"></i>
+                                </button>
                                 <button onclick="budgetManager.updateBalance(${account.id}, 'subtract')" 
-                                        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">-</button>
+                                        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs mobile-touch-button">
+                                    <i class="fas fa-minus"></i>
+                                </button>
                             </div>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Added: ${account.createdDate}</p>
@@ -1549,11 +2051,11 @@
                     container.appendChild(div);
                 });
             }
-
             updateIncomeList() {
                 const container = document.getElementById('incomeList');
+                if (!container) return;
+                
                 container.innerHTML = '';
-
                 this.data.income.forEach(income => {
                     const div = document.createElement('div');
                     div.className = 'flex justify-between items-center p-3 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700 transition-colors duration-300';
@@ -1563,19 +2065,23 @@
                             <p class="text-sm text-gray-600 dark:text-gray-300">${income.date}</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-bold text-green-600 dark:text-green-400">+$${income.amount.toFixed(2)}</span>
+                            <span class="font-bold text-green-600 dark:text-green-400">+${this.formatCurrency(income.amount)}</span>
                             <button onclick="budgetManager.removeItem('income', ${income.id})" 
-                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                    aria-label="Remove income: ${income.source}"
+                                    title="Remove this income entry">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
                         </div>
                     `;
                     container.appendChild(div);
                 });
             }
-
             updateExpenseList() {
                 const container = document.getElementById('expenseList');
+                if (!container) return;
+                
                 container.innerHTML = '';
-
                 this.data.expenses.forEach(expense => {
                     const div = document.createElement('div');
                     div.className = 'flex justify-between items-center p-3 bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700 transition-colors duration-300';
@@ -1585,26 +2091,29 @@
                             <p class="text-sm text-gray-600 dark:text-gray-300">${expense.category} • ${expense.date}</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-bold text-red-600 dark:text-red-400">-$${expense.amount.toFixed(2)}</span>
+                            <span class="font-bold text-red-600 dark:text-red-400">-${this.formatCurrency(expense.amount)}</span>
                             <button onclick="budgetManager.removeItem('expenses', ${expense.id})" 
-                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">✕</button>
+                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                    aria-label="Remove expense: ${expense.description}"
+                                    title="Remove this expense">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
                         </div>
                     `;
                     container.appendChild(div);
                 });
             }
-
             updateCategoryBreakdown() {
                 const container = document.getElementById('categoryBreakdown');
+                if (!container) return;
+                
                 container.innerHTML = '';
-
                 const categories = {};
                 this.data.expenses.forEach(expense => {
                     categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
                 });
-
                 const totalExpenses = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
-
+                
                 Object.entries(categories).forEach(([category, amount], index) => {
                     const percentage = totalExpenses > 0 ? (amount / totalExpenses * 100).toFixed(1) : 0;
                     const color = this.pastelColors[index % this.pastelColors.length];
@@ -1619,11 +2128,11 @@
                         <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                             <div class="h-3 rounded-full transition-all duration-300" style="width: ${percentage}%; background-color: ${color}"></div>
                         </div>
-                        <p class="text-lg font-bold text-gray-800 dark:text-gray-200 mt-2">$${amount.toFixed(2)}</p>
+                        <p class="text-lg font-bold text-gray-800 dark:text-gray-200 mt-2">${this.formatCurrency(amount)}</p>
                     `;
                     container.appendChild(div);
                 });
-
+                
                 // Add example categories if no expenses exist
                 if (Object.keys(categories).length === 0) {
                     const exampleCategories = [
@@ -1632,7 +2141,6 @@
                         { name: 'Transportation', example: 'Gas, public transit, car payments', color: '#10B981' },
                         { name: 'Entertainment', example: 'Movies, games, subscriptions', color: '#F59E0B' }
                     ];
-
                     exampleCategories.forEach(cat => {
                         const div = document.createElement('div');
                         div.className = 'bg-white dark:bg-gray-700 rounded-lg p-4 border-2 shadow-sm opacity-60 transition-colors duration-300';
@@ -1646,22 +2154,22 @@
                             <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                                 <div class="h-3 rounded-full" style="width: 0%; background-color: ${cat.color}"></div>
                             </div>
-                            <p class="text-lg font-bold text-gray-400 dark:text-gray-500 mt-2">$0.00</p>
+                            <p class="text-lg font-bold text-gray-400 dark:text-gray-500 mt-2">${this.formatCurrency(0)}</p>
                         `;
                         container.appendChild(div);
                     });
                 }
             }
-
             updateTransactionHistory() {
                 const container = document.getElementById('transactionHistory');
+                if (!container) return;
+                
                 container.innerHTML = '';
-
                 const allTransactions = [
                     ...this.data.income.map(item => ({...item, type: 'income'})),
                     ...this.data.expenses.map(item => ({...item, type: 'expense'}))
-                ].sort((a, b) => b.id - a.id);
-
+                ].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
                 allTransactions.slice(0, 20).forEach(transaction => {
                     const div = document.createElement('div');
                     const isIncome = transaction.type === 'income';
@@ -1673,13 +2181,12 @@
                             <p class="text-sm text-gray-600 dark:text-gray-300">${isIncome ? 'Income' : transaction.category} • ${transaction.date}</p>
                         </div>
                         <span class="font-bold ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
-                            ${isIncome ? '+' : '-'}$${transaction.amount.toFixed(2)}
+                            ${isIncome ? '+' : '-'}${this.formatCurrency(transaction.amount)}
                         </span>
                     `;
                     container.appendChild(div);
                 });
             }
-
             updateBalance(accountId, action) {
                 const amount = prompt(`Enter amount to ${action === 'add' ? 'add to' : 'subtract from'} account:`);
                 const numAmount = parseFloat(amount);
@@ -1688,7 +2195,7 @@
                     alert('Please enter a valid positive amount.');
                     return;
                 }
-
+                
                 const account = this.data.bankAccounts.find(acc => acc.id === accountId);
                 if (account) {
                     if (action === 'add') {
@@ -1700,13 +2207,11 @@
                     this.updateDisplay();
                 }
             }
-
             removeItem(type, id) {
                 this.data[type] = this.data[type].filter(item => item.id !== id);
                 this.saveData();
                 this.updateDisplay();
             }
-
             exportData() {
                 const dataStr = JSON.stringify(this.data, null, 2);
                 const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -1717,10 +2222,9 @@
                 link.click();
                 URL.revokeObjectURL(url);
             }
-
             importData(file) {
                 if (!file) return;
-
+                
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
@@ -1739,18 +2243,17 @@
                 };
                 reader.readAsText(file);
             }
-
             clearAllData() {
                 this.data = { income: [], expenses: [], bankAccounts: [] };
                 this.saveData();
                 this.updateDisplay();
             }
-
             async handleCloudAction() {
                 if (!this.firebaseAuth) {
                     this.showNotification('Firebase not ready', 'error');
                     return;
                 }
+                
                 if (!this.isSignedIn) {
                     try {
                         const provider = new firebase.auth.GoogleAuthProvider();
@@ -1763,115 +2266,96 @@
                     this.toggleAccountMenu();
                 }
             }
-
             toggleAccountMenu() {
                 const accountMenu = document.getElementById('accountMenu');
-                accountMenu.classList.toggle('hidden');
+                if (accountMenu) {
+                    accountMenu.classList.toggle('hidden');
+                }
             }
-
             hideAccountMenu() {
                 const accountMenu = document.getElementById('accountMenu');
-                accountMenu.classList.add('hidden');
+                if (accountMenu) {
+                    accountMenu.classList.add('hidden');
+                }
             }
-
             async switchFirebaseAccount() {
                 try {
                     await this.firebaseAuth.signOut();
-                    await new Promise(r=>setTimeout(r,200));
+                    await new Promise(r => setTimeout(r, 200));
                     const provider = new firebase.auth.GoogleAuthProvider();
                     await this.firebaseAuth.signInWithPopup(provider);
                     this.showNotification('Switched account', 'success');
-                } catch(e){
+                } catch(e) {
                     console.error(e);
                     this.showNotification('Switch failed', 'error');
                 }
             }
-
-            toggleProfileDropdown() {
-                const dropdown = document.getElementById('profileDropdown');
-                dropdown.classList.toggle('hidden');
-            }
-
-            hideProfileDropdown() {
-                const dropdown = document.getElementById('profileDropdown');
-                dropdown.classList.add('hidden');
-            }
-
             async signOutFromFirebase() {
                 try {
                     await this.firebaseAuth.signOut();
                     this.showNotification('Signed out', 'success');
-                } catch(e){
+                } catch(e) {
                     this.showNotification('Sign out failed', 'error');
                 }
             }
-
-            async syncToFirebase() {
-                if (!this.isSignedIn || !this.firebaseDb) return;
+            async syncToFirebase(retryCount = 0) {
+                if (!this.isSignedIn || !this.firebaseDb) {
+                    this.showNotification('Not signed in to Firebase', 'error');
+                    return false;
+                }
+                
                 try {
                     this.showNotification('Syncing to cloud...', 'info');
+                    
+                    const payload = { 
+                        ...this.data, 
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(), 
+                        version: '1.0',
+                        lastSyncClient: navigator.userAgent,
+                        syncId: Date.now()
+                    };
+                    
                     const docRef = this.firebaseDb.collection('budgetMaster').doc(this.firebaseUser.uid);
-                    const payload = { ...this.data, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), version: '1.0' };
                     await docRef.set(payload, { merge: true });
+                    
                     this.showNotification('Cloud sync complete', 'success');
-                } catch(e){
-                    console.error(e);
-                    this.showNotification('Cloud sync failed', 'error');
+                    return true;
+                    
+                } catch(error) {
+                    console.error('Firebase sync error:', error);
+                    
+                    // Retry logic for network errors
+                    if (retryCount < 3 && (error.code === 'unavailable' || error.code === 'deadline-exceeded')) {
+                        this.showNotification(`Retrying sync (${retryCount + 1}/3)...`, 'info');
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                        return this.syncToFirebase(retryCount + 1);
+                    }
+                    
+                    const errorMessage = this.getFirebaseErrorMessage(error);
+                    this.showNotification(errorMessage, 'error');
+                    return false;
                 }
             }
-
-            async createGoogleDriveFile(fileName, content) {
-                const boundary = '-------314159265358979323846';
-                const delimiter = "\r\n--" + boundary + "\r\n";
-                const close_delim = "\r\n--" + boundary + "--";
-
-                const metadata = {
-                    'name': fileName,
-                    'parents': ['appDataFolder']
-                };
-
-                const multipartRequestBody =
-                    delimiter +
-                    'Content-Type: application/json\r\n\r\n' +
-                    JSON.stringify(metadata) +
-                    delimiter +
-                    'Content-Type: application/json\r\n\r\n' +
-                    content +
-                    close_delim;
-
-                const request = gapi.client.request({
-                    'path': 'https://www.googleapis.com/upload/drive/v3/files',
-                    'method': 'POST',
-                    'params': {'uploadType': 'multipart'},
-                    'headers': {
-                        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-                    },
-                    'body': multipartRequestBody
-                });
-
-                const response = await request;
-                return response.result.id;
+            
+            getFirebaseErrorMessage(error) {
+                switch (error.code) {
+                    case 'permission-denied':
+                        return 'Permission denied. Please check your account.';
+                    case 'unavailable':
+                        return 'Service temporarily unavailable. Please try again.';
+                    case 'unauthenticated':
+                        return 'Authentication expired. Please sign in again.';
+                    default:
+                        return 'Cloud sync failed. Please try again later.';
+                }
             }
-
-            async updateGoogleDriveFile(fileId, content) {
-                const request = gapi.client.request({
-                    'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-                    'method': 'PATCH',
-                    'params': {'uploadType': 'media'},
-                    'headers': {
-                        'Content-Type': 'application/json'
-                    },
-                    'body': content
-                });
-
-                await request;
-            }
-
             async loadFromFirebase() {
                 if (!this.isSignedIn || !this.firebaseDb) return false;
+                
                 try {
                     this.showNotification('Loading cloud data...', 'info');
                     const docRef = await this.firebaseDb.collection('budgetMaster').doc(this.firebaseUser.uid).get();
+                    
                     if (docRef.exists) {
                         const cloudData = docRef.data();
                         if (cloudData.income && cloudData.expenses && cloudData.bankAccounts) {
@@ -1888,29 +2372,37 @@
                     }
                     this.showNotification('No cloud data found', 'info');
                     return false;
-                } catch(e){
+                } catch(e) {
                     console.error(e);
                     this.showNotification('Cloud load failed', 'error');
                     return false;
                 }
             }
-
             showNotification(message, type = 'info') {
                 // Create notification element
                 const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full`;
+                const isMobile = window.innerWidth <= 640;
+                
+                if (isMobile) {
+                    notification.className = `fixed top-4 left-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform -translate-y-full notification`;
+                } else {
+                    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full notification`;
+                }
                 
                 // Set color based on type
                 switch (type) {
                     case 'success':
-                        notification.className += ' bg-green-500';
+                        notification.classList.add('bg-green-500');
                         break;
                     case 'error':
-                        notification.className += ' bg-red-500';
+                        notification.classList.add('bg-red-500');
+                        break;
+                    case 'warning':
+                        notification.classList.add('bg-yellow-500');
                         break;
                     case 'info':
                     default:
-                        notification.className += ' bg-blue-500';
+                        notification.classList.add('bg-blue-500');
                         break;
                 }
                 
@@ -1919,127 +2411,205 @@
                 
                 // Animate in
                 setTimeout(() => {
-                    notification.classList.remove('translate-x-full');
+                    if (isMobile) {
+                        notification.classList.remove('-translate-y-full');
+                    } else {
+                        notification.classList.remove('translate-x-full');
+                    }
                 }, 100);
                 
                 // Animate out and remove
                 setTimeout(() => {
-                    notification.classList.add('translate-x-full');
+                    if (isMobile) {
+                        notification.classList.add('-translate-y-full');
+                    } else {
+                        notification.classList.add('translate-x-full');
+                    }
                     setTimeout(() => {
-                        document.body.removeChild(notification);
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
                     }, 300);
                 }, 3000);
             }
-
+            async saveData() {
+                return new Promise((resolve, reject) => {
+                    this.saveQueue.push({ resolve, reject });
+                    this.processSaveQueue();
+                });
+            }
+            
+            async processSaveQueue() {
+                if (this.isSaving || this.saveQueue.length === 0) return;
+                
+                this.isSaving = true;
+                const operations = [...this.saveQueue];
+                this.saveQueue = [];
+                
+                try {
+                    this.saveLocalOnly();
+                    
+                    if (this.isSignedIn) {
+                        await this.syncToFirebase();
+                    }
+                    
+                    operations.forEach(op => op.resolve());
+                } catch (error) {
+                    operations.forEach(op => op.reject(error));
+                } finally {
+                    this.isSaving = false;
+                    
+                    // Process any operations that were queued while saving
+                    if (this.saveQueue.length > 0) {
+                        this.processSaveQueue();
+                    }
+                }
+            }
+            
             saveLocalOnly() {
                 localStorage.setItem('budgetMasterData', JSON.stringify(this.data));
             }
-
-            saveData() {
-                this.saveLocalOnly();
-                if (this.isSignedIn) {
-                    this.syncToFirebase();
-                }
-            }
-
             loadData() {
                 const saved = localStorage.getItem('budgetMasterData');
                 return saved ? JSON.parse(saved) : { income: [], expenses: [], bankAccounts: [] };
             }
-
             loadSettings() {
                 const saved = localStorage.getItem('budgetMasterSettings');
                 return saved ? JSON.parse(saved) : { theme: 'light', currency: 'USD' };
             }
-
             saveSettings() {
-                const currency = document.getElementById('currencySelect').value;
-                this.settings.currency = currency;
+                const currencySelect = document.getElementById('currencySelect');
+                if (currencySelect) {
+                    this.settings.currency = currencySelect.value;
+                }
                 localStorage.setItem('budgetMasterSettings', JSON.stringify(this.settings));
                 this.updateDisplay();
                 this.closeSettingsModal();
                 this.showNotification('Settings saved successfully!', 'success');
             }
-
             openSettingsModal() {
-                document.getElementById('settingsModal').classList.remove('hidden');
-                document.getElementById('currencySelect').value = this.settings.currency;
-                this.updateThemeButtons();
+                const modal = document.getElementById('settingsModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    const currencySelect = document.getElementById('currencySelect');
+                    if (currencySelect) {
+                        currencySelect.value = this.settings.currency;
+                    }
+                    this.updateThemeButtons();
+                }
             }
-
             closeSettingsModal() {
-                document.getElementById('settingsModal').classList.add('hidden');
+                const modal = document.getElementById('settingsModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
             }
-
             openHelpModal() {
-                document.getElementById('helpModal').classList.remove('hidden');
+                const modal = document.getElementById('helpModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
             }
-
             closeHelpModal() {
-                document.getElementById('helpModal').classList.add('hidden');
+                const modal = document.getElementById('helpModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
             }
-
             setTheme(theme) {
                 this.settings.theme = theme;
                 localStorage.setItem('budgetMasterSettings', JSON.stringify(this.settings));
                 this.applyTheme();
                 this.updateThemeButtons();
+                
                 // Force a complete re-render after theme is applied
                 setTimeout(() => {
                     this.updateDisplay();
-                    this.drawCharts();
                 }, 100);
+                
                 this.showNotification(`Switched to ${theme} mode`, 'success');
             }
-
+            
             applyTheme() {
                 const html = document.documentElement;
+                const isDark = this.settings.theme === 'dark';
                 
-                if (this.settings.theme === 'dark') {
+                if (isDark) {
                     html.classList.add('dark');
                 } else {
                     html.classList.remove('dark');
                 }
+                
+                // Update chart colors based on theme
+                this.chartTextColor = isDark ? '#F3F4F6' : '#374151';
+                this.chartBorderColor = isDark ? '#4B5563' : '#E5E7EB';
+                
+                // Redraw charts with new theme colors
+                if (this.data) {
+                    setTimeout(() => this.drawCharts(), 50);
+                }
             }
-
             updateThemeButtons() {
                 const lightBtn = document.getElementById('lightModeBtn');
                 const darkBtn = document.getElementById('darkModeBtn');
                 
                 // Reset both buttons first
-                lightBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
-                darkBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
+                if (lightBtn) {
+                    lightBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
+                }
+                if (darkBtn) {
+                    darkBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 flex items-center justify-center space-x-2 bg-white dark:bg-gray-700';
+                }
                 
                 // Apply active state
-                if (this.settings.theme === 'light') {
+                if (this.settings.theme === 'light' && lightBtn) {
                     lightBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 transition-all duration-200 flex items-center justify-center space-x-2';
-                } else {
+                } else if (darkBtn) {
                     darkBtn.className = 'flex-1 py-2 px-4 rounded-lg border-2 border-blue-500 bg-blue-900 text-blue-300 transition-all duration-200 flex items-center justify-center space-x-2';
                 }
             }
-
             formatCurrency(amount) {
+                if (amount === null || amount === undefined || isNaN(amount)) {
+                    return (this.currencySymbols[this.settings.currency] || '$') + '0.00';
+                }
+                
                 const symbol = this.currencySymbols[this.settings.currency] || '$';
+                
+                // Handle very large numbers with suffixes
+                if (Math.abs(amount) >= 1e12) {
+                    return symbol + (amount / 1e12).toFixed(1) + 'T';
+                }
+                if (Math.abs(amount) >= 1e9) {
+                    return symbol + (amount / 1e9).toFixed(1) + 'B';
+                }
+                if (Math.abs(amount) >= 1e6) {
+                    return symbol + (amount / 1e6).toFixed(1) + 'M';
+                }
+                if (Math.abs(amount) >= 1e3) {
+                    return symbol + (amount / 1e3).toFixed(1) + 'K';
+                }
                 
                 // Currencies that don't use decimal places
                 const noDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'KHR', 'LAK', 'MMK', 'UZS', 'KZT', 'AMD', 'CLP', 'PYG', 'UGX', 'RWF', 'BIF', 'DJF', 'KMF', 'MGA', 'XOF', 'XAF', 'XPF', 'VUV', 'PGK'];
                 
                 if (noDecimalCurrencies.includes(this.settings.currency)) {
-                    return `${symbol}${Math.round(amount).toLocaleString()}`;
+                    return symbol + Math.round(amount).toLocaleString();
                 }
                 
                 // Special formatting for certain currencies
                 if (this.settings.currency === 'INR' || this.settings.currency === 'PKR' || this.settings.currency === 'LKR' || this.settings.currency === 'NPR' || this.settings.currency === 'BTN') {
                     // Indian numbering system (lakhs, crores)
-                    return `${symbol}${amount.toFixed(2)}`;
+                    return symbol + amount.toFixed(2);
                 }
                 
-                return `${symbol}${amount.toFixed(2)}`;
+                return symbol + amount.toFixed(2);
             }
         }
-
-        // Initialize the app
-        const budgetManager = new BudgetManager();
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.budgetManager = new BudgetManager();
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cdc3f945f892f9',t:'MTc1NDgxMDc5My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
